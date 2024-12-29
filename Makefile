@@ -15,7 +15,7 @@ clean:
 
 .PHONY:build
 build:
-	python3 -m build
+	python3 -m build --no-isolation
 
 .PHONY:upload
 upload:

@@ -77,7 +77,7 @@ def configure_subprocess():
 
 @contextmanager
 def change_env(key: str, value: str):
-    old_value = os.environ[key]
+    old_value = os.environ.get(key, '')
     os.environ[key] = value
     logger.debug(f'change_env set key={key} value={value}')
     try:

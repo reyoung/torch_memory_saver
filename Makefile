@@ -15,7 +15,8 @@ clean:
 
 .PHONY:build
 build:
-	python3 -m build --no-isolation
+	# python3 -m build --no-isolation
+	python3 setup.py sdist --dist-dir=dist
 
 .PHONY:upload
 upload:

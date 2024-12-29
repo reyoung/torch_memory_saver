@@ -2,6 +2,7 @@ import ctypes
 import logging
 import os
 from contextlib import contextmanager
+from pathlib import Path
 from typing import Optional
 
 import torch
@@ -54,3 +55,14 @@ def _compute_cdll():
     env_ld_preload = os.environ.get('LD_PRELOAD', '')
     assert 'torch_memory_saver' in env_ld_preload, f'Please specify correct LD_PRELOAD (currently: {env_ld_preload})'
     return ctypes.CDLL(env_ld_preload)
+
+
+def get_binary_path():
+    dir_package = Path(__file__).parent
+    candidates = [
+        p
+        for d in [dir_package, dir_package.parent]
+        for p in d.glob('torch_memory_saver_cpp.*.so')
+    ]
+    assert len(candidates) == 1, f'{candidates=}'
+    return candidates[0]

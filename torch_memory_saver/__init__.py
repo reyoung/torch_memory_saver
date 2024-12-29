@@ -70,7 +70,7 @@ def get_binary_path():
 
 
 @contextmanager
-def configure_ld_preload_for_subprocesses():
+def configure_subprocess():
     with change_env('LD_PRELOAD', str(get_binary_path())):
         yield
 

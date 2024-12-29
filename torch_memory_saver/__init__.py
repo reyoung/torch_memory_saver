@@ -41,6 +41,7 @@ class _GlobalInfo:
     def cdll(self):
         if self._cdll is None:
             self._cdll = _compute_cdll()
+            logger.debug(f'Use cdll={self._cdll}')
         return self._cdll
 
     def next_id(self):
@@ -66,3 +67,22 @@ def get_binary_path():
     ]
     assert len(candidates) == 1, f'{candidates=}'
     return candidates[0]
+
+
+@contextmanager
+def configure_ld_preload_for_subprocesses():
+    with change_env('LD_PRELOAD', str(get_binary_path())):
+        yield
+
+
+@contextmanager
+def change_env(key: str, value: str):
+    old_value = os.environ[key]
+    os.environ[key] = value
+    logger.debug(f'change_env set key={key} value={value}')
+    try:
+        yield
+    finally:
+        assert os.environ[key] == value
+        os.environ[key] = old_value
+        logger.debug(f'change_env restore key={key} value={old_value}')

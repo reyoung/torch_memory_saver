@@ -12,25 +12,23 @@ logger = logging.getLogger(__name__)
 class TorchMemorySaver:
     def __init__(self):
         self._mem_pool = torch.cuda.MemPool()
-        self._cdll = _global_info.cdll
         self._id = _global_info.next_id()
-        logger.debug('setup cdll=%s', self._cdll)
         assert self._id == 1, 'Only support one single instance yet (multi-instance will be implemented later)'
 
     @contextmanager
     def region(self):
         with torch.cuda.use_mem_pool(self._mem_pool):
-            self._cdll.tms_region_enter()
+            _global_info.cdll.tms_region_enter()
             try:
                 yield
             finally:
-                self._cdll.tms_region_leave()
+                _global_info.cdll.tms_region_leave()
 
     def pause(self):
-        self._cdll.tms_pause()
+        _global_info.cdll.tms_pause()
 
     def resume(self):
-        self._cdll.tms_resume()
+        _global_info.cdll.tms_resume()
 
 
 class _GlobalInfo:

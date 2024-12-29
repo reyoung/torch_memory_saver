@@ -5,19 +5,19 @@ from contextlib import contextmanager
 from pathlib import Path
 from typing import Optional
 
-import torch
-
 logger = logging.getLogger(__name__)
 
 
 class TorchMemorySaver:
     def __init__(self):
+        import torch
         self._mem_pool = torch.cuda.MemPool()
         self._id = _global_info.next_id()
         assert self._id == 1, 'Only support one single instance yet (multi-instance will be implemented later)'
 
     @contextmanager
     def region(self):
+        import torch
         with torch.cuda.use_mem_pool(self._mem_pool):
             _global_info.cdll.tms_region_enter()
             try:

@@ -78,7 +78,8 @@ def _compute_cdll():
     if 'torch_memory_saver' in env_ld_preload:
         return ctypes.CDLL(env_ld_preload)
     else:
-        logger.warning(f'TorchMemorySaver is disabled because invalid LD_PRELOAD="{env_ld_preload}"')
+        logger.warning(
+            f'TorchMemorySaver is disabled because invalid LD_PRELOAD="{env_ld_preload}" (process_id={os.getpid()})')
         return None
 
 

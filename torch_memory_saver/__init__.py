@@ -20,15 +20,14 @@ class TorchMemorySaver:
     @contextmanager
     def region(self):
         if _global_info.binary_info.enabled:
-            yield
-
-        else:
             with torch.cuda.use_mem_pool(self._mem_pool):
                 _global_info.binary_info.cdll.tms_region_enter()
                 try:
                     yield
                 finally:
                     _global_info.binary_info.cdll.tms_region_leave()
+        else:
+            yield
 
     def pause(self):
         if _global_info.binary_info.enabled:

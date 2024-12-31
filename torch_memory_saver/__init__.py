@@ -14,7 +14,7 @@ logger = logging.getLogger(__name__)
 class TorchMemorySaver:
     def __init__(self):
         self._impl: _TorchMemorySaverImplBase = \
-            _TorchMemorySaverImplNormal() if _global_info.enabled else _TorchMemorySaverImplNoop()
+            _TorchMemorySaverImplNormal() if _global_info().enabled else _TorchMemorySaverImplNoop()
 
     @contextmanager
     def region(self):
@@ -42,23 +42,23 @@ class _TorchMemorySaverImplBase(ABC):
 class _TorchMemorySaverImplNormal(_TorchMemorySaverImplBase):
     def __init__(self):
         self._mem_pool = torch.cuda.MemPool()
-        self._id = _global_info.next_id()
+        self._id = _global_info().next_id()
         assert self._id == 1, 'Only support one single instance yet (multi-instance will be implemented later)'
 
     @contextmanager
     def region(self):
         with torch.cuda.use_mem_pool(self._mem_pool):
-            _global_info.cdll.tms_region_enter()
+            _global_info().cdll.tms_region_enter()
             try:
                 yield
             finally:
-                _global_info.cdll.tms_region_leave()
+                _global_info().cdll.tms_region_leave()
 
     def pause(self):
-        _global_info.cdll.tms_pause()
+        _global_info().cdll.tms_pause()
 
     def resume(self):
-        _global_info.cdll.tms_resume()
+        _global_info().cdll.tms_resume()
 
 
 class _TorchMemorySaverImplNoop(_TorchMemorySaverImplBase):
@@ -98,7 +98,18 @@ class _GlobalInfo:
         return self._last_id
 
 
-_global_info = _GlobalInfo()
+class Lazy:
+    def __init__(self, creator):
+        self._creator = creator
+        self._value = None
+
+    def __call__(self):
+        if self._value is None:
+            self._value = self._creator()
+        return self._value
+
+
+_global_info = Lazy(_GlobalInfo)
 
 
 def get_binary_path():

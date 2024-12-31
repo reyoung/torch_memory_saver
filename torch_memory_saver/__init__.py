@@ -73,6 +73,15 @@ class _TorchMemorySaverImplNoop(_TorchMemorySaverImplBase):
         pass
 
 
+def _compute_cdll():
+    env_ld_preload = os.environ.get('LD_PRELOAD', '')
+    if 'torch_memory_saver' in env_ld_preload:
+        return ctypes.CDLL(env_ld_preload)
+    else:
+        logger.warning(f'TorchMemorySaver is disabled because invalid LD_PRELOAD="{env_ld_preload}"')
+        return None
+
+
 class _GlobalInfo:
     def __init__(self):
         self.cdll: Optional[ctypes.CDLL] = _compute_cdll()
@@ -89,15 +98,6 @@ class _GlobalInfo:
 
 
 _global_info = _GlobalInfo()
-
-
-def _compute_cdll():
-    env_ld_preload = os.environ.get('LD_PRELOAD', '')
-    if 'torch_memory_saver' in env_ld_preload:
-        return ctypes.CDLL(env_ld_preload)
-    else:
-        logger.warning(f'TorchMemorySaver is disabled because invalid LD_PRELOAD="{env_ld_preload}"')
-        return None
 
 
 def get_binary_path():

@@ -1,6 +1,7 @@
 import ctypes
 import logging
 import os
+from abc import ABC
 from contextlib import contextmanager
 from pathlib import Path
 from typing import Optional
@@ -11,6 +12,33 @@ logger = logging.getLogger(__name__)
 
 
 class TorchMemorySaver:
+    def __init__(self):
+        self._impl: _TorchMemorySaverImplBase = TODO
+
+    @contextmanager
+    def region(self):
+        with self._impl.region():
+            yield
+
+    def pause(self):
+        self._impl.pause()
+
+    def resume(self):
+        self._impl.resume()
+
+
+class _TorchMemorySaverImplBase(ABC):
+    def region(self):
+        raise NotImplementedError
+
+    def pause(self):
+        raise NotImplementedError
+
+    def resume(self):
+        raise NotImplementedError
+
+
+class _TorchMemorySaverImplNormal(_TorchMemorySaverImplBase):
     def __init__(self):
         self._mem_pool = torch.cuda.MemPool()
         self._id = _global_info.next_id()
@@ -30,6 +58,18 @@ class TorchMemorySaver:
 
     def resume(self):
         _global_info.cdll.tms_resume()
+
+
+class _TorchMemorySaverImplNoop(_TorchMemorySaverImplBase):
+    @contextmanager
+    def region(self):
+        yield
+
+    def pause(self):
+        pass
+
+    def resume(self):
+        pass
 
 
 class _GlobalInfo:

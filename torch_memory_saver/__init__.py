@@ -37,6 +37,10 @@ class TorchMemorySaver:
         if _global_info.binary_info.enabled:
             _global_info.binary_info.cdll.tms_resume()
 
+    @property
+    def enabled(self):
+        return _global_info.binary_info.enabled
+
 
 @dataclass
 class _BinaryInfo:

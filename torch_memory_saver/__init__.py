@@ -13,13 +13,14 @@ logger = logging.getLogger(__name__)
 
 class TorchMemorySaver:
     def __init__(self):
-        self._mem_pool = torch.cuda.MemPool()
+        self._mem_pool = None
         self._id = _global_info.next_id()
         assert self._id == 1, 'Only support one single instance yet (multi-instance will be implemented later)'
 
     @contextmanager
     def region(self):
         if _global_info.binary_info.enabled:
+            self._ensure_mem_pool()
             with torch.cuda.use_mem_pool(self._mem_pool):
                 _global_info.binary_info.cdll.tms_region_enter()
                 try:
@@ -40,6 +41,10 @@ class TorchMemorySaver:
     @property
     def enabled(self):
         return _global_info.binary_info.enabled
+
+    def _ensure_mem_pool(self):
+        if self._mem_pool is None:
+            self._mem_pool = torch.cuda.MemPool()
 
 
 @dataclass

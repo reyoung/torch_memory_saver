@@ -7,7 +7,7 @@ logger = logging.getLogger(__name__)
 
 setup(
     name='torch_memory_saver',
-    version='0.0.3',
+    version='0.0.4',
     ext_modules=[setuptools.Extension(
         'torch_memory_saver_cpp',
         ['csrc/torch_memory_saver.cpp'],

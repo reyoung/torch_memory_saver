@@ -35,7 +35,7 @@ else
 fi
 
 docker run --rm \
-   -v $(pwd):/sgl-kernel \
+   -v $(pwd):/app \
    ${DOCKER_IMAGE} \
    bash -c "
    ${PYTHON_ROOT_PATH}/bin/${TORCH_INSTALL} && \
@@ -45,7 +45,7 @@ docker run --rm \
    mkdir -p /usr/lib/${ARCH}-linux-gnu/ && \
    ln -s /usr/local/cuda-${CUDA_VERSION}/targets/${LIBCUDA_ARCH}-linux/lib/stubs/libcuda.so /usr/lib/${ARCH}-linux-gnu/libcuda.so && \
 
-   cd /sgl-kernel && \
+   cd /app && \
    ls -la ${PYTHON_ROOT_PATH}/lib/python${PYTHON_VERSION}/site-packages/wheel/ && \
    PYTHONPATH=${PYTHON_ROOT_PATH}/lib/python${PYTHON_VERSION}/site-packages ${PYTHON_ROOT_PATH}/bin/python -m uv build --wheel -Cbuild-dir=build . --color=always --no-build-isolation && \
    ./rename_wheels.sh

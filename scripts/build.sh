@@ -3,8 +3,8 @@ set -euxo pipefail
 
 # NOTE MODIFIED FROM https://github.com/sgl-project/sglang/blob/main/sgl-kernel/build.sh
 
-PYTHON_VERSION=$1
-CUDA_VERSION=$2
+echo "python=${PYTHON_VERSION} cuda=${CUDA_VERSION}" # args
+
 PYTHON_ROOT_PATH=/opt/python/cp${PYTHON_VERSION//.}-cp${PYTHON_VERSION//.}
 
 if [ -z "$3" ]; then

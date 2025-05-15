@@ -26,13 +26,7 @@ else
    fi
 fi
 
-if [ ${CUDA_VERSION} = "12.8" ]; then
-   DOCKER_IMAGE="${BUILDER_NAME}:cuda${CUDA_VERSION}"
-   TORCH_INSTALL="pip install --no-cache-dir --pre torch --index-url https://download.pytorch.org/whl/nightly/cu${CUDA_VERSION//.}"
-else
-   DOCKER_IMAGE="${BUILDER_NAME}:cuda${CUDA_VERSION}"
-   TORCH_INSTALL="pip install --no-cache-dir torch==2.6.0 --index-url https://download.pytorch.org/whl/cu${CUDA_VERSION//.}"
-fi
+DOCKER_IMAGE="${BUILDER_NAME}:cuda${CUDA_VERSION}"
 
 docker run --rm \
    -v $(pwd):/app \
@@ -40,7 +34,6 @@ docker run --rm \
    bash -c "
    PYTHON_ROOT_PATH=${PYTHON_ROOT_PATH} \
    PYTHON_VERSION=${PYTHON_VERSION} \
-   TORCH_INSTALL=${TORCH_INSTALL} \
    CUDA_VERSION=${CUDA_VERSION} \
    ARCH=${ARCH} \
    LIBCUDA_ARCH=${LIBCUDA_ARCH} \

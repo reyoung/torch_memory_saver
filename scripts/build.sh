@@ -32,5 +32,5 @@ docker run --rm \
    CUDA_VERSION=${CUDA_VERSION} \
    ARCH=${ARCH} \
    LIBCUDA_ARCH=${LIBCUDA_ARCH} \
-   ./build_in_docker.sh
+   ./scripts/build_in_docker.sh
    "

@@ -6,12 +6,7 @@ set -euxo pipefail
 echo "python=${PYTHON_VERSION} cuda=${CUDA_VERSION}" # args
 
 PYTHON_ROOT_PATH=/opt/python/cp${PYTHON_VERSION//.}-cp${PYTHON_VERSION//.}
-
-if [ -z "$3" ]; then
-   ARCH=$(uname -i)
-else
-   ARCH=$3
-fi
+ARCH=$(uname -i)
 
 echo "ARCH:  $ARCH"
 if [ ${ARCH} = "aarch64" ]; then

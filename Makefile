@@ -32,4 +32,4 @@ build-sdist:
 upload:
 	ls -alh dist
 	docker run --rm -v $(shell pwd):/app python:3.11 \
-	  /bin/bash -c "pip install twine && python3 -m twine upload dist/*"
+	  /bin/bash -c "pip install twine && python3 -m twine upload /app/dist/*"

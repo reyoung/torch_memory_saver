@@ -18,7 +18,7 @@ clean:
 
 .PHONY:build-wheel
 build-wheel:
-	bash scripts/build.sh
+	PYTHON_VERSION=3.9 CUDA_VERSION=12.4 bash scripts/build.sh
 
 .PHONY:build-sdist
 build-sdist:

@@ -9,6 +9,9 @@ reinstall:
 	# pip install --no-cache-dir -e .
 	pip install --no-cache-dir .
 
+# Release
+# clean - build-wheel - build-sdist - upload
+
 .PHONY:clean
 clean:
 	rm -rf dist/*

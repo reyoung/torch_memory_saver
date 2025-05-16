@@ -36,7 +36,7 @@ library_dirs = [
 
 setup(
     name='torch_memory_saver',
-    version='0.0.5',
+    version='0.0.6',
     ext_modules=[setuptools.Extension(
         'torch_memory_saver_cpp',
         ['csrc/torch_memory_saver.cpp'],

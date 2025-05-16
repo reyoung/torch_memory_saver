@@ -42,7 +42,8 @@ setup(
         ['csrc/torch_memory_saver.cpp'],
         include_dirs=include_dirs,
         library_dirs=library_dirs,
-        libraries=['cuda']
+        libraries=['cuda'],
+        py_limited_api=True,
     )],
     python_requires=">=3.9",
     packages=['torch_memory_saver'],

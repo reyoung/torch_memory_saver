@@ -43,6 +43,7 @@ setup(
         include_dirs=include_dirs,
         library_dirs=library_dirs,
         libraries=['cuda'],
+        define_macros=[('Py_LIMITED_API', '0x03090000')],
         py_limited_api=True,
     )],
     python_requires=">=3.9",

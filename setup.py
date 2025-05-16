@@ -27,6 +27,10 @@ cuda_home = Path(_find_cuda_home())
 include_dirs = [
     str(cuda_home.resolve() / 'targets/x86_64-linux/include'),
 ]
+library_dirs = [
+    str(cuda_home.resolve() / 'lib64'),
+    str(cuda_home.resolve() / 'lib64/stubs'),
+]
 setup(
     name='torch_memory_saver',
     version='0.0.5',
@@ -34,6 +38,7 @@ setup(
         'torch_memory_saver_cpp',
         ['csrc/torch_memory_saver.cpp'],
         include_dirs=include_dirs,
+        library_dirs=library_dirs,
         libraries=['cuda']
     )],
     python_requires=">=3.9",

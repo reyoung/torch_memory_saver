@@ -61,7 +61,7 @@ class _BinaryInfo:
         if 'torch_memory_saver' in env_ld_preload:
             return _BinaryInfo(cdll=ctypes.CDLL(env_ld_preload))
         else:
-            logger.warning(
+            print(
                 f'TorchMemorySaver is disabled for the current process because invalid LD_PRELOAD="{env_ld_preload}" (process_id={os.getpid()})')
             return _BinaryInfo(cdll=None)
 

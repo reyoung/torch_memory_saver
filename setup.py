@@ -1,12 +1,13 @@
-import os
-import glob
-import shutil
 import logging
-import setuptools
+import os
+import shutil
 from pathlib import Path
+
+import setuptools
 from setuptools import setup
 
 logger = logging.getLogger(__name__)
+
 
 # copy & modify from torch/utils/cpp_extension.py
 def _find_cuda_home():
@@ -23,6 +24,7 @@ def _find_cuda_home():
             cuda_home = '/usr/local/cuda'
     return cuda_home
 
+
 cuda_home = Path(_find_cuda_home())
 include_dirs = [
     str(cuda_home.resolve() / 'targets/x86_64-linux/include'),
@@ -31,6 +33,7 @@ library_dirs = [
     str(cuda_home.resolve() / 'lib64'),
     str(cuda_home.resolve() / 'lib64/stubs'),
 ]
+
 setup(
     name='torch_memory_saver',
     version='0.0.5',

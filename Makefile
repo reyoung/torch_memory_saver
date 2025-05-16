@@ -10,7 +10,10 @@ reinstall:
 	pip install --no-cache-dir .
 
 # Release
-# clean - build-wheel - build-sdist - upload
+# sudo make clean
+# sudo make build-wheel
+# sudo make build-sdist
+# sudo make upload
 
 .PHONY:clean
 clean:
@@ -27,4 +30,6 @@ build-sdist:
 
 .PHONY:upload
 upload:
-	python3 -m twine upload dist/*
+	ls -alh dist
+	docker run --rm -v $(pwd):/app python:3.11 \
+	  /bin/bash -c "pip install twine && python3 -m twine upload dist/*"

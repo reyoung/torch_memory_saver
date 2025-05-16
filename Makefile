@@ -13,8 +13,12 @@ reinstall:
 clean:
 	rm -rf dist/*
 
-.PHONY:build
-build:
+.PHONY:build-wheel
+build-wheel:
+	bash scripts/build.sh
+
+.PHONY:build-sdist
+build-sdist:
 	# python3 -m build --no-isolation
 	python3 setup.py sdist --dist-dir=dist
 

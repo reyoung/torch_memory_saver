@@ -2,7 +2,7 @@ import logging
 import os
 import shutil
 from pathlib import Path
-
+import platform
 import setuptools
 from setuptools import setup
 
@@ -26,9 +26,17 @@ def _find_cuda_home():
 
 
 cuda_home = Path(_find_cuda_home())
+arch = platform.machine()
+
+if arch == 'aarch64':
+    target_dir = 'targets/aarch64-linux'
+else:
+    target_dir = 'targets/x86_64-linux'
+
 include_dirs = [
-    str(cuda_home.resolve() / 'targets/x86_64-linux/include'),
+    str(cuda_home.resolve() / target_dir / 'include'),
 ]
+
 library_dirs = [
     str(cuda_home.resolve() / 'lib64'),
     str(cuda_home.resolve() / 'lib64/stubs'),

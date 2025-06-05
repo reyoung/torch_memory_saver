@@ -1,3 +1,4 @@
+
 import logging
 import os
 import shutil
@@ -23,12 +24,35 @@ def _find_cuda_home():
             # Guess #3
             cuda_home = '/usr/local/cuda'
     return cuda_home
+    
+def _get_platform_architecture():
+    host_arch = platform.machine()
+    if host_arch == "aarch64":
+        try:
+            uname_output = subprocess.check_output(["uname", "-a"], encoding="utf-8")
+            if "tegra" in uname_output:
+                return f"{"tegra"}-{host_arch}"
+        except Exception as e:
+            print(f"[warn] Failed to run uname: {e}")
 
+    return host_arch
 
 cuda_home = Path(_find_cuda_home())
+arch = platform.machine()
+SYSTEM_ARCH_TYPE = os.environ.get("SYSTEM_ARCH", _get_platform_architecture())
+
+if arch == 'aarch64':
+    if SYSTEM_ARCH_TYPE == "tegra-aarch64":
+        target_dir = 'targets/aarch64-linux'
+    else:
+        target_dir = 'targets/sbsa-linux'
+else:
+    target_dir = 'targets/x86_64-linux'
+
 include_dirs = [
-    str(cuda_home.resolve() / 'targets/x86_64-linux/include'),
+    str(cuda_home.resolve() / target_dir / 'include'),
 ]
+
 library_dirs = [
     str(cuda_home.resolve() / 'lib64'),
     str(cuda_home.resolve() / 'lib64/stubs'),

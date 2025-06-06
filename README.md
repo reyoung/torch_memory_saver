@@ -41,3 +41,11 @@ You can use this command for testing:
 ```bash
 LD_PRELOAD=/home/jobuser/torch_memory_saver/torch_memory_saver_cpp.abi3.so python examples/simple.py
 ```
+
+### What do we expect from the example?
+
+1. Created a normal tensor and a pauseable tensor, you should see some memory being used by the GPU
+2. Pause the memory saver who is holding the pauseable tensor, you should see the GPU memory
+used by the pauseable tensor is released
+3. Resume the memory saver, you should see the GPU memory used by the pauseable tensor is restored
+4. The virtual address of the pauseable tensor should be the same

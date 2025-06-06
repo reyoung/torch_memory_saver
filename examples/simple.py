@@ -15,7 +15,7 @@ memory_saver = TorchMemorySaver()
 normal_tensor = torch.full((1_000_000,), 100, dtype=torch.uint8, device='cuda')
 
 with memory_saver.region():
-    pauseable_tensor = torch.full((10_000_000_000,), 100, dtype=torch.uint8, device='cuda')
+    pauseable_tensor = torch.full((1_000_000_000,), 100, dtype=torch.uint8, device='cuda')
 
 # Get the virtual address
 original_address = pauseable_tensor.data_ptr()

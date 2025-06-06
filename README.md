@@ -27,3 +27,17 @@ TODO:
 - [x] Publish to pypi
 - [ ] More tests and infra
 - [ ] Documentation
+
+
+## Development
+
+```bash
+pip install -e .
+```
+
+An `torch_memory_saver_cpp.abi3.so` will be built under `build/` folder.
+
+You can use this command for testing:
+```bash
+LD_PRELOAD=/home/jobuser/torch_memory_saver/torch_memory_saver_cpp.abi3.so python examples/simple.py
+```

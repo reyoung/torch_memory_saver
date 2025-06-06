@@ -136,7 +136,7 @@ public:
         CUDAUtils::cu_mem_set_access(*ptr, size, device);
 
         {
-            const std::lock_guard <std::mutex> lock(allocator_metadata_mutex_);
+            const std::lock_guard<std::mutex> lock(allocator_metadata_mutex_);
             allocation_metadata_.emplace(*ptr, _AllocationMetadata{size, device, allocHandle});
         }
 

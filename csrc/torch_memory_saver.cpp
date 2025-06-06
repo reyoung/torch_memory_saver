@@ -7,7 +7,7 @@
 #include <unordered_map>
 #include <mutex>
 
-// #define TMS_DEBUG_LOG
+#define TMS_DEBUG_LOG
 
 // ----------------------------------------------- copied code --------------------------------------------------
 
@@ -222,7 +222,6 @@ public:
 #ifdef TMS_DEBUG_LOG
         std::cout << "[torch_memory_saver.cpp] tms_region_enter instance=" << this << std::endl;
 #endif
-        std::cout << "Hello Biao from instance " << this << std::endl;
         is_interesting_region_ = true;
     }
 

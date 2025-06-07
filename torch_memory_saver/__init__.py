@@ -65,18 +65,33 @@ class _BinaryInfo:
         return self.cdll is not None
 
     @staticmethod
+    def _setup_function_signatures(cdll):
+        """Define function signatures for the C library
+
+        Without the signatures, ctypes assumes:
+        - All arguments are int
+        - All return values are int
+
+        What actually happens is:
+        - tms_create returns a pointer: TorchMemorySaver*
+        - other functions take a pointer: TorchMemorySaver* as argument
+
+        Checkout `csrc/torch_memory_saver.cpp` for more details.
+        """
+        cdll.tms_create.restype = ctypes.c_void_p
+        cdll.tms_destroy.argtypes = [ctypes.c_void_p]
+        cdll.tms_region_enter.argtypes = [ctypes.c_void_p]
+        cdll.tms_region_leave.argtypes = [ctypes.c_void_p]
+        cdll.tms_pause.argtypes = [ctypes.c_void_p]
+        cdll.tms_resume.argtypes = [ctypes.c_void_p]
+
+    @staticmethod
     def compute():
         env_ld_preload = os.environ.get('LD_PRELOAD', '')
         if 'torch_memory_saver' in env_ld_preload:
             try:
                 cdll = ctypes.CDLL(env_ld_preload)
-                # Define function signatures
-                cdll.tms_create.restype = ctypes.c_void_p
-                cdll.tms_destroy.argtypes = [ctypes.c_void_p]
-                cdll.tms_region_enter.argtypes = [ctypes.c_void_p]
-                cdll.tms_region_leave.argtypes = [ctypes.c_void_p]
-                cdll.tms_pause.argtypes = [ctypes.c_void_p]
-                cdll.tms_resume.argtypes = [ctypes.c_void_p]
+                _BinaryInfo._setup_function_signatures(cdll)
                 return _BinaryInfo(cdll=cdll)
             except OSError as e:
                 logger.error(f'Failed to load CDLL from {env_ld_preload}: {e}')

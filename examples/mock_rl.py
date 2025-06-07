@@ -1,4 +1,5 @@
 import logging
+import os
 import sys
 import time
 from typing import Callable
@@ -96,7 +97,7 @@ def run():
     static_input[...] = 100
     g.replay()
     print(f'{static_output=}')
-    # KV: 101, Model: mean(100 * 20480) = 2,048,000
+    # KV: 101, Model: mean(100 * 1 * 20480) = 2,048,000
     assert static_output == 2048101, f'{static_output=}'
 
     # cache.clear_buffers()
@@ -138,13 +139,13 @@ def run():
     # this should fail
     # print(f'{cache.kv_buffer=}')
 
-    print('Before call kv_cache_memory_saver.resume and model_weights_memory_saver.resume')
-    print_gpu_memory_gb()
-    kv_cache_memory_saver.resume()
-    print('After call kv_cache_memory_saver.resume') 
+    print('Before call model_weights_memory_saver.resume and kv_cache_memory_saver.resume')
     print_gpu_memory_gb()
     model_weights_memory_saver.resume()
     print('After call model_weights_memory_saver.resume')
+    print_gpu_memory_gb()
+    kv_cache_memory_saver.resume()
+    print('After call kv_cache_memory_saver.resume') 
     print_gpu_memory_gb()
 
     dummy = torch.zeros((3,), device='cuda')
@@ -169,8 +170,12 @@ def run():
     # print(f'{big_tensor=}')
     print(f'{dummy=}')
 
-    print("Succeed! You can ignore the error message after this message")
+    print("Succeed!")
     print("=" * 100)
+
+    # exit this process gracefully, bypassing CUDA cleanup
+    # Checkout for more details: https://github.com/fzyzcjy/torch_memory_saver/pull/18 
+    os._exit(0)
 
 
 if __name__ == '__main__':

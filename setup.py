@@ -4,6 +4,7 @@ import os
 import shutil
 from pathlib import Path
 import platform
+import subprocess
 import setuptools
 from setuptools import setup
 
@@ -24,7 +25,7 @@ def _find_cuda_home():
             # Guess #3
             cuda_home = '/usr/local/cuda'
     return cuda_home
-    
+
 def _get_platform_architecture():
     host_arch = platform.machine()
     if host_arch == "aarch64":
@@ -34,7 +35,6 @@ def _get_platform_architecture():
                 return f"{"tegra"}-{host_arch}"
         except Exception as e:
             print(f"[warn] Failed to run uname: {e}")
-
     return host_arch
 
 cuda_home = Path(_find_cuda_home())

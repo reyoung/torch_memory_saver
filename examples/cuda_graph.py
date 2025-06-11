@@ -1,14 +1,16 @@
 import logging
 import sys
 import time
+import os
 from typing import Callable
 
 import torch
-from torch_memory_saver import TorchMemorySaver
+import torch_memory_saver
 
 logging.basicConfig(level=logging.DEBUG, stream=sys.stdout)
 
-memory_saver = TorchMemorySaver()
+# Use the global singleton instance
+memory_saver = torch_memory_saver.memory_saver
 dummy_tensor_size = (5, 100_000_000,)
 
 
@@ -22,7 +24,7 @@ class KVCache:
         self.create_buffers(1)
 
     def create_buffers(self, value):
-        with memory_saver.region():
+        with memory_saver.region(tag="kv_cache"):
             # or model weights, etc
             self.kv_buffer = torch.full(dummy_tensor_size, value, dtype=torch.float32, device='cuda')
         print(f'create_buffers {_ptr(self.kv_buffer)=}')
@@ -55,6 +57,14 @@ def create_cuda_graph(fn: Callable):
 
 
 def run():
+    # Check if TorchMemorySaver is properly enabled
+    print(f"TorchMemorySaver enabled: {memory_saver.enabled}")
+    print(f"LD_PRELOAD: {os.environ.get('LD_PRELOAD', 'NOT SET')}")
+    
+    if not memory_saver.enabled:
+        print("WARNING: TorchMemorySaver is not enabled! Memory pause/resume won't work.")
+        print("Make sure to set LD_PRELOAD properly.")
+
     cache = KVCache()
     static_input = torch.zeros((5,), dtype=torch.float32, device='cuda')
     static_output = torch.zeros((5,), dtype=torch.float32, device='cuda')
@@ -84,8 +94,8 @@ def run():
     print('sleep...')
     time.sleep(3)
 
-    print('call memory_saver.pause')
-    memory_saver.pause()
+    print('call memory_saver.pause("kv_cache")')
+    memory_saver.pause("kv_cache")
 
     print('sleep...')
     time.sleep(3)
@@ -103,8 +113,8 @@ def run():
     # this should fail
     # print(f'{cache.kv_buffer=}')
 
-    print('call memory_saver.resume')
-    memory_saver.resume()
+    print('call memory_saver.resume("kv_cache")')
+    memory_saver.resume("kv_cache")
 
     dummy = torch.zeros((3,), device='cuda')
     print(f'{_ptr(dummy)=}')
@@ -124,6 +134,10 @@ def run():
 
     # print(f'{big_tensor=}')
     print(f'{dummy=}')
+
+    # exit this process gracefully, bypassing CUDA cleanup
+    # Checkout for more details: https://github.com/fzyzcjy/torch_memory_saver/pull/18 
+    os._exit(0)
 
 
 if __name__ == '__main__':

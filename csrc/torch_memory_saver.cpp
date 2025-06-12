@@ -8,7 +8,7 @@
 #include <mutex>
 #include <string>
 
-#define TMS_DEBUG_LOG
+// #define TMS_DEBUG_LOG
 
 // ----------------------------------------------- copied code --------------------------------------------------
 
@@ -110,8 +110,6 @@ namespace CUDAUtils {
         accessDesc.location.id = device;
         accessDesc.flags = CU_MEM_ACCESS_FLAGS_PROT_READWRITE;
 
-        // Set the access flags for each location specified in desc 
-        // for the given virtual address range.
         CURESULT_CHECK(cuMemSetAccess((CUdeviceptr) ptr, size, &accessDesc, 1));
     }
 }
@@ -157,13 +155,8 @@ public:
         CURESULT_CHECK(cuCtxGetDevice(&device));
 
         CUmemGenericAllocationHandle allocHandle;
-        // create physical chunk
         CUDAUtils::cu_mem_create(&allocHandle, size, device);
-
-        // reserve virtual address
         CURESULT_CHECK(cuMemAddressReserve((CUdeviceptr *) ptr, size, 0, 0, 0));
-
-        // map virtual address to physical chunk
         CURESULT_CHECK(cuMemMap((CUdeviceptr) * ptr, size, 0, allocHandle, 0));
         CUDAUtils::cu_mem_set_access(*ptr, size, device);
 
@@ -212,7 +205,6 @@ public:
             void *ptr = it->first;
             _AllocationMetadata metadata = it->second;
 
-            // If tag is specified, only pause matching allocations
             if (!tag.empty() && metadata.tag != tag) {
                 continue;
             }
@@ -236,7 +228,6 @@ public:
             void *ptr = it->first;
             _AllocationMetadata &metadata = it->second;
 
-            // If tag is specified, only resume matching allocations
             if (!tag.empty() && metadata.tag != tag) {
                 continue;
             }

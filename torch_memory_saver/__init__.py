@@ -23,7 +23,6 @@ class TorchMemorySaver:
         if _global_info.binary_info.enabled:
             self._ensure_mem_pool()
             with torch.cuda.use_mem_pool(self._mem_pool):
-                # Set current tag and enable
                 _global_info.binary_info.cdll.tms_set_current_tag(tag.encode('utf-8'))
                 _global_info.binary_info.cdll.tms_enable()
                 try:
@@ -80,7 +79,6 @@ class _BinaryInfo:
     @staticmethod
     def _setup_function_signatures(cdll):
         """Define function signatures for the C library"""
-        # New singleton-based functions
         cdll.tms_enable.argtypes = []
         cdll.tms_disable.argtypes = []
         cdll.tms_set_current_tag.argtypes = [ctypes.c_char_p]
@@ -89,7 +87,7 @@ class _BinaryInfo:
 
     @staticmethod
     def compute():
-        env_ld_preload = "/home/jobuser/torch_memory_saver/torch_memory_saver_cpp.abi3.so"
+        env_ld_preload = os.environ.get('LD_PRELOAD', '')
         if 'torch_memory_saver' in env_ld_preload:
             try:
                 cdll = ctypes.CDLL(env_ld_preload)
@@ -138,7 +136,7 @@ def get_binary_path():
 
 @contextmanager
 def configure_subprocess():
-    with change_env('LD_PRELOAD', "/home/jobuser/torch_memory_saver/torch_memory_saver_cpp.abi3.so"):
+    with change_env('LD_PRELOAD', str(get_binary_path())):
         yield
 
 

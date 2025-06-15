@@ -7,23 +7,20 @@ import torch
 
 logging.basicConfig(level=logging.DEBUG, stream=sys.stdout)
 
-import torch_memory_saver
+from torch_memory_saver import torch_memory_saver
 from examples.util import print_gpu_memory_gb
 
-# Use the global singleton instance
-memory_saver = torch_memory_saver.memory_saver
-
 # Check if TorchMemorySaver is properly enabled
-print(f"TorchMemorySaver enabled: {memory_saver.enabled}")
+print(f"TorchMemorySaver enabled: {torch_memory_saver.enabled}")
 print(f"LD_PRELOAD: {os.environ.get('LD_PRELOAD', 'NOT SET')}")
 
-if not memory_saver.enabled:
+if not torch_memory_saver.enabled:
     print("WARNING: TorchMemorySaver is not enabled! Memory pause/resume won't work.")
     print("Make sure to set LD_PRELOAD properly.")
 
 normal_tensor = torch.full((1_000_000,), 100, dtype=torch.uint8, device='cuda')
 
-with memory_saver.region():
+with torch_memory_saver.region():
     pauseable_tensor = torch.full((1_000_000_000,), 100, dtype=torch.uint8, device='cuda')
 
 # Get the virtual address
@@ -37,13 +34,13 @@ print(f'{normal_tensor=} {pauseable_tensor=}')
 print('sleep...')
 time.sleep(3)
 
-memory_saver.pause()  # Pause all tensors
+torch_memory_saver.pause()  # Pause all tensors
 print_gpu_memory_gb("After pause")
 
 print('sleep...')
 time.sleep(3)
 
-memory_saver.resume()  # Resume all tensors
+torch_memory_saver.resume()  # Resume all tensors
 print_gpu_memory_gb("After resume")
 
 new_address = pauseable_tensor.data_ptr()
@@ -55,3 +52,7 @@ print('sleep...')
 time.sleep(3)
 
 print(f'{normal_tensor=} {pauseable_tensor=}')
+
+# exit this process gracefully, bypassing CUDA cleanup
+# Checkout for more details: https://github.com/fzyzcjy/torch_memory_saver/pull/18 
+os._exit(0)

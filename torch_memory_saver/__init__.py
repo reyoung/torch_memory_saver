@@ -22,11 +22,11 @@ class TorchMemorySaver:
             self._ensure_mem_pool()
             with torch.cuda.use_mem_pool(self._mem_pool):
                 _global_info.binary_info.cdll.tms_set_current_tag(tag.encode('utf-8'))
-                _global_info.binary_info.cdll.tms_enable()
+                _global_info.binary_info.cdll.tms_region_enter()
                 try:
                     yield
                 finally:
-                    _global_info.binary_info.cdll.tms_disable()
+                    _global_info.binary_info.cdll.tms_region_leave()
         else:
             yield
 
@@ -42,21 +42,6 @@ class TorchMemorySaver:
             tag_bytes = tag.encode('utf-8') if tag else None
             _global_info.binary_info.cdll.tms_resume(tag_bytes)
 
-    def set_current_tag(self, tag: str):
-        """Set the current tag for new allocations"""
-        if _global_info.binary_info.enabled:
-            _global_info.binary_info.cdll.tms_set_current_tag(tag.encode('utf-8'))
-
-    def enable(self):
-        """Enable memory saving"""
-        if _global_info.binary_info.enabled:
-            _global_info.binary_info.cdll.tms_enable()
-
-    def disable(self):
-        """Disable memory saving"""
-        if _global_info.binary_info.enabled:
-            _global_info.binary_info.cdll.tms_disable()
-
     @property
     def enabled(self):
         return _global_info.binary_info.enabled
@@ -64,7 +49,6 @@ class TorchMemorySaver:
     def _ensure_mem_pool(self):
         if self._mem_pool is None:
             self._mem_pool = torch.cuda.MemPool()
-
 
 @dataclass
 class _BinaryInfo:
@@ -77,8 +61,8 @@ class _BinaryInfo:
     @staticmethod
     def _setup_function_signatures(cdll):
         """Define function signatures for the C library"""
-        cdll.tms_enable.argtypes = []
-        cdll.tms_disable.argtypes = []
+        cdll.tms_region_enter.argtypes = []
+        cdll.tms_region_leave.argtypes = []
         cdll.tms_set_current_tag.argtypes = [ctypes.c_char_p]
         cdll.tms_pause.argtypes = [ctypes.c_char_p]
         cdll.tms_resume.argtypes = [ctypes.c_char_p]
@@ -118,8 +102,7 @@ class _GlobalInfo:
 _global_info = _GlobalInfo()
 
 # Global singleton instance
-memory_saver = TorchMemorySaver()
-
+torch_memory_saver = TorchMemorySaver()
 
 def get_binary_path():
     dir_package = Path(__file__).parent

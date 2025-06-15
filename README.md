@@ -37,27 +37,25 @@ memory_saver.resume()
 Please refer to https://github.com/sgl-project/sglang/issues/7009 for details.
 
 ```python
-import torch_memory_saver
-
-memory_saver = torch_memory_saver.memory_saver
+from torch_memory_saver import torch_memory_saver
 
 # 1. Create tensors with different tags
-with memory_saver.region(tag="type1"):
+with torch_memory_saver.region(tag="type1"):
     tensor1 = torch.full((5_000_000_000,), 100, dtype=torch.uint8, device='cuda')
 
-with memory_saver.region(tag="type2"):
+with torch_memory_saver.region(tag="type2"):
     tensor2 = torch.full((5_000_000_000,), 100, dtype=torch.uint8, device='cuda')
 
 # 2. Pause and resume with different tags selectively
-memory_saver.pause("type1")
-memory_saver.pause("type2")
+torch_memory_saver.pause("type1")
+torch_memory_saver.pause("type2")
 
 
-memory_saver.resume("type2")
-memory_saver.resume("type1")
+torch_memory_saver.resume("type2")
+torch_memory_saver.resume("type1")
 
-memory_saver.pause("type1")
-memory_saver.resume("type1")
+torch_memory_saver.pause("type1")
+torch_memory_saver.resume("type1")
 ```
 
 ## Development

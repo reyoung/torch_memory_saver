@@ -3,22 +3,19 @@ import sys
 import time
 import os
 import torch
-import torch_memory_saver
+from torch_memory_saver import torch_memory_saver
 from examples.util import print_gpu_memory_gb
 
 logging.basicConfig(level=logging.DEBUG, stream=sys.stdout)
-
-# Use the global singleton instance
-memory_saver = torch_memory_saver.memory_saver
 
 # Allocate a normal tensor
 normal_tensor = torch.full((1_000_000,), 100, dtype=torch.uint8, device='cuda')
 
 # Allocate tensors using different tags
-with memory_saver.region(tag="type1"):
+with torch_memory_saver.region(tag="type1"):
     tensor1 = torch.full((5_000_000_000,), 100, dtype=torch.uint8, device='cuda')
 
-with memory_saver.region(tag="type2"):
+with torch_memory_saver.region(tag="type2"):
     tensor2 = torch.full((5_000_000_000,), 100, dtype=torch.uint8, device='cuda')
 
 # Get virtual addresses
@@ -32,22 +29,22 @@ print('sleep...')
 time.sleep(3)
 
 print('pause memory with tag "type1"')
-memory_saver.pause("type1")
+torch_memory_saver.pause("type1")
 print_gpu_memory_gb()
 
 print('pause memory with tag "type2"')
-memory_saver.pause("type2")
+torch_memory_saver.pause("type2")
 print_gpu_memory_gb()
 
 print('sleep...')
 time.sleep(3)
 
 print('resume memory with tag "type1"')
-memory_saver.resume("type1")
+torch_memory_saver.resume("type1")
 print_gpu_memory_gb()
 
 print('resume memory with tag "type2"')
-memory_saver.resume("type2")
+torch_memory_saver.resume("type2")
 print_gpu_memory_gb()
 
 # Verify addresses
@@ -68,7 +65,7 @@ print(f'{normal_tensor=} {tensor1=} {tensor2=}')
 # Additional test: pause/resume specific tags while keeping others active
 print('\n=== Additional test: selective pause/resume ===')
 print('Pause only type1, keep type2 active')
-memory_saver.pause("type1")
+torch_memory_saver.pause("type1")
 print('Try to access tensor1 (should work due to virtual memory)')
 try:
     _ = tensor1[0]  # This should still work due to virtual memory management
@@ -84,5 +81,9 @@ except:
     print('tensor2 access failed')
 
 print('Resume type1')
-memory_saver.resume("type1")
+torch_memory_saver.resume("type1")
 print('Both tensors should now be active')
+
+# exit this process gracefully, bypassing CUDA cleanup
+# Checkout for more details: https://github.com/fzyzcjy/torch_memory_saver/pull/18 
+os._exit(0)

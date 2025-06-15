@@ -118,9 +118,9 @@ namespace CUDAUtils {
 
 class TmsThreadLocalContext {
 public:
-    TmsThreadLocalContext() : enabled_(false), tag_("default") {}
+    TmsThreadLocalContext() : is_interesting_region_(false), tag_("default") {}
     
-    bool enabled_;
+    bool is_interesting_region_;
     std::string tag_;
 };
 
@@ -148,16 +148,12 @@ public:
         current_thread_context_.tag_ = tag;
     }
 
-    std::string get_current_tag() const {
-        return current_thread_context_.tag_;
+    bool is_interesting_region() const {
+        return current_thread_context_.is_interesting_region_;
     }
 
-    bool is_enabled() const {
-        return current_thread_context_.enabled_;
-    }
-
-    void set_enabled(bool enabled) {
-        current_thread_context_.enabled_ = enabled;
+    void set_interesting_region(bool enabled) {
+        current_thread_context_.is_interesting_region_ = enabled;
     }
 
     cudaError_t malloc(void **ptr, size_t size) {
@@ -272,7 +268,7 @@ private:
 
 cudaError_t cudaMalloc(void **ptr, size_t size) {
     TorchMemorySaver& saver = TorchMemorySaver::getInstance();
-    if (saver.is_enabled()) {
+    if (saver.is_interesting_region()) {
         return saver.malloc(ptr, size);
     } else {
         return APIForwarder::call_real_cuda_malloc(ptr, size);
@@ -281,7 +277,7 @@ cudaError_t cudaMalloc(void **ptr, size_t size) {
 
 cudaError_t cudaFree(void *ptr) {
     TorchMemorySaver& saver = TorchMemorySaver::getInstance();
-    if (saver.is_enabled()) {
+    if (saver.is_interesting_region()) {
         return saver.free(ptr);
     } else {
         return APIForwarder::call_real_cuda_free(ptr);
@@ -289,12 +285,12 @@ cudaError_t cudaFree(void *ptr) {
 }
 
 extern "C" {
-void tms_enable() {
-    TorchMemorySaver::getInstance().set_enabled(true);
+void tms_region_enter() {
+    TorchMemorySaver::getInstance().set_interesting_region(true);
 }
 
-void tms_disable() {
-    TorchMemorySaver::getInstance().set_enabled(false);
+void tms_region_leave() {
+    TorchMemorySaver::getInstance().set_interesting_region(false);
 }
 
 void tms_set_current_tag(const char* tag) {

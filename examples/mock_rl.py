@@ -5,13 +5,12 @@ import time
 from typing import Callable
 
 import torch
-import torch_memory_saver
+from torch_memory_saver import torch_memory_saver
 from examples.util import print_gpu_memory_gb
 
 logging.basicConfig(level=logging.DEBUG, stream=sys.stdout)
 
 # Use the global singleton instance
-memory_saver = torch_memory_saver.memory_saver
 dummy_tensor_size = (5, 100_000_000,)
 
 
@@ -26,7 +25,7 @@ class Model:
         self.create_weights()
     
     def create_weights(self):
-        with memory_saver.region(tag="model_weights"):
+        with torch_memory_saver.region(tag="model_weights"):
             # Single linear layer (no bias)
             self.linear = torch.nn.Linear(self.input_size, self.output_size, bias=False, device='cuda')
             # Initialize with ones for predictable output
@@ -46,7 +45,7 @@ class KVCache:
         self.create_buffers(1)
 
     def create_buffers(self, value):
-        with memory_saver.region(tag="kv_cache"):
+        with torch_memory_saver.region(tag="kv_cache"):
             # or model weights, etc
             self.kv_buffer = torch.full(dummy_tensor_size, value, dtype=torch.float32, device='cuda')
         print(f'create_buffers {_ptr(self.kv_buffer)=}')
@@ -80,10 +79,10 @@ def create_cuda_graph(fn: Callable):
 
 def run():
     # Check if TorchMemorySaver is properly enabled  
-    print(f"TorchMemorySaver enabled: {memory_saver.enabled}")
+    print(f"TorchMemorySaver enabled: {torch_memory_saver.enabled}")
     print(f"LD_PRELOAD: {os.environ.get('LD_PRELOAD', 'NOT SET')}")
     
-    if not memory_saver.enabled:
+    if not torch_memory_saver.enabled:
         print("WARNING: TorchMemorySaver is not enabled! Memory pause/resume won't work.")
         print("Make sure to set LD_PRELOAD properly.")
 
@@ -123,11 +122,11 @@ def run():
     print('Before pause kv_cache')
     print_gpu_memory_gb("Before pause kv_cache")
 
-    memory_saver.pause("kv_cache")
+    torch_memory_saver.pause("kv_cache")
     print('After pause kv_cache')
     print_gpu_memory_gb("After pause kv_cache")
 
-    memory_saver.pause("model_weights")
+    torch_memory_saver.pause("model_weights")
     print('After pause model_weights')
     print_gpu_memory_gb("After pause model_weights")
 
@@ -150,11 +149,11 @@ def run():
     print('Before resume model_weights and kv_cache')
     print_gpu_memory_gb("Before resume")
     
-    memory_saver.resume("model_weights")
+    torch_memory_saver.resume("model_weights")
     print('After resume model_weights')
     print_gpu_memory_gb("After resume model_weights")
     
-    memory_saver.resume("kv_cache")
+    torch_memory_saver.resume("kv_cache")
     print('After resume kv_cache') 
     print_gpu_memory_gb("After resume kv_cache")
 
@@ -186,7 +185,7 @@ def run():
     # Additional test: demonstrate selective pause/resume
     print("\n=== Additional test: selective pause/resume ===")
     print("Pause only kv_cache, keep model_weights active")
-    memory_saver.pause("kv_cache")
+    torch_memory_saver.pause("kv_cache")
     print_gpu_memory_gb("Only kv_cache paused")
     
     print("Try to access model weights (should work)")
@@ -197,7 +196,7 @@ def run():
         print("Model weights access failed")
     
     print("Resume kv_cache")
-    memory_saver.resume("kv_cache")
+    torch_memory_saver.resume("kv_cache")
     print_gpu_memory_gb("All resumed")
 
     # exit this process gracefully, bypassing CUDA cleanup

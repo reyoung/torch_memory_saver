@@ -14,8 +14,6 @@ logger = logging.getLogger(__name__)
 class TorchMemorySaver:
     def __init__(self):
         self._mem_pool = None
-        if not _global_info.binary_info.enabled:
-            logger.warning("TorchMemorySaver binary not available, memory saving will be disabled")
 
     @contextmanager
     def region(self, tag: str = "default"):

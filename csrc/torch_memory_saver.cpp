@@ -116,6 +116,16 @@ namespace CUDAUtils {
 
 // ----------------------------------------------- primary class --------------------------------------------------
 
+class TmsThreadLocalContext {
+public:
+    TmsThreadLocalContext() : enabled_(false), tag_("default") {}
+    
+    bool enabled_;
+    std::string tag_;
+};
+
+static thread_local TmsThreadLocalContext current_thread_context_;
+
 struct _AllocationMetadata {
     size_t size;
     CUdevice device;
@@ -135,19 +145,19 @@ public:
     TorchMemorySaver& operator=(const TorchMemorySaver&) = delete;
 
     void set_current_tag(const std::string& tag) {
-        current_tag_ = tag;
+        current_thread_context_.tag_ = tag;
     }
 
     std::string get_current_tag() const {
-        return current_tag_;
+        return current_thread_context_.tag_;
     }
 
     bool is_enabled() const {
-        return enabled_;
+        return current_thread_context_.enabled_;
     }
 
     void set_enabled(bool enabled) {
-        enabled_ = enabled;
+        current_thread_context_.enabled_ = enabled;
     }
 
     cudaError_t malloc(void **ptr, size_t size) {
@@ -162,13 +172,13 @@ public:
 
         {
             const std::lock_guard<std::mutex> lock(allocator_metadata_mutex_);
-            allocation_metadata_.emplace(*ptr, _AllocationMetadata{size, device, allocHandle, current_tag_});
+            allocation_metadata_.emplace(*ptr, _AllocationMetadata{size, device, allocHandle, current_thread_context_.tag_});
         }
 
 #ifdef TMS_DEBUG_LOG
         std::cout << "[torch_memory_saver.cpp] TorchMemorySaver.cuda_malloc "
                   << " ptr=" << ptr << " *ptr=" << *ptr << " size=" << size
-                  << " allocHandle=" << allocHandle << " tag=" << current_tag_
+                  << " allocHandle=" << allocHandle << " tag=" << current_thread_context_.tag_
                   << std::endl;
 #endif
 
@@ -252,12 +262,10 @@ public:
     }
 
 private:
-    TorchMemorySaver() : enabled_(false), current_tag_("default") {}
+    TorchMemorySaver() {}
 
     std::mutex allocator_metadata_mutex_;
     std::unordered_map<void *, _AllocationMetadata> allocation_metadata_;
-    bool enabled_;
-    std::string current_tag_;
 };
 
 // ------------------------------------------------- entrypoints ------------------------------------------------

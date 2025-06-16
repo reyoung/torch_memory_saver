@@ -70,5 +70,5 @@ You can use this command for local testing:
 ```bash
 LD_PRELOAD={your_workspace}/torch_memory_saver/torch_memory_saver_cpp.abi3.so python examples/simple.py
 
-LD_PRELOAD={your_workspace}/torch_memory_saver/torch_memory_saver_cpp.abi3.so python examples/mock_rl.py
+LD_PRELOAD={your_workspace}/torch_memory_saver/torch_memory_saver_cpp.abi3.so python examples/rl_with_cuda_graph.py
 ```

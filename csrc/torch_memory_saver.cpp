@@ -163,7 +163,6 @@ public:
         return instance;
     }
 
-    // Delete copy constructor and assignment operator
     TorchMemorySaver(const TorchMemorySaver&) = delete;
     TorchMemorySaver& operator=(const TorchMemorySaver&) = delete;
 

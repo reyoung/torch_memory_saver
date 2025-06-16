@@ -153,7 +153,7 @@ struct _AllocationMetadata {
     size_t size;
     CUdevice device;
     CUmemGenericAllocationHandle allocHandle;
-    std::string tag;  // Add tag for memory type classification
+    std::string tag;
 };
 
 class TorchMemorySaver {

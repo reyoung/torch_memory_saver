@@ -9,7 +9,6 @@ from torch_memory_saver import torch_memory_saver
 
 logging.basicConfig(level=logging.DEBUG, stream=sys.stdout)
 
-# Use the global singleton instance
 dummy_tensor_size = (5, 100_000_000,)
 
 
@@ -56,14 +55,6 @@ def create_cuda_graph(fn: Callable):
 
 
 def run():
-    # Check if TorchMemorySaver is properly enabled
-    print(f"TorchMemorySaver enabled: {torch_memory_saver.enabled}")
-    print(f"LD_PRELOAD: {os.environ.get('LD_PRELOAD', 'NOT SET')}")
-    
-    if not torch_memory_saver.enabled:
-        print("WARNING: TorchMemorySaver is not enabled! Memory pause/resume won't work.")
-        print("Make sure to set LD_PRELOAD properly.")
-
     cache = KVCache()
     static_input = torch.zeros((5,), dtype=torch.float32, device='cuda')
     static_output = torch.zeros((5,), dtype=torch.float32, device='cuda')
@@ -80,12 +71,6 @@ def run():
     g.replay()
     print(f'{static_output=}')
     assert static_output == 101, f'{static_output=}'
-
-    # cache.clear_buffers()
-
-    # with with_pauseable_mode():
-    #     big_tensor = torch.zeros((2_000_000_000,), dtype=torch.uint8, device='cuda')
-    #     print(f'{big_tensor=}')
 
     print('torch.cuda.empty_cache()')
     torch.cuda.empty_cache()
@@ -109,16 +94,11 @@ def run():
     print('sleep...')
     time.sleep(3)
 
-    # this should fail
-    # print(f'{cache.kv_buffer=}')
-
     print('call memory_saver.resume("kv_cache")')
     torch_memory_saver.resume("kv_cache")
 
     dummy = torch.zeros((3,), device='cuda')
     print(f'{_ptr(dummy)=}')
-
-    # cache.create_buffers(2)
 
     cache.kv_buffer[...] = 2
 
@@ -131,7 +111,6 @@ def run():
     print('sleep...')
     time.sleep(3)
 
-    # print(f'{big_tensor=}')
     print(f'{dummy=}')
 
     # exit this process gracefully, bypassing CUDA cleanup

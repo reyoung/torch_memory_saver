@@ -114,17 +114,40 @@ namespace CUDAUtils {
     }
 }
 
+// ----------------------------------------------- region manager --------------------------------------------------
+
+namespace RegionManager {
+    static thread_local bool is_interesting_region_ = false;
+    static thread_local std::string current_tag_ = "default";
+
+    void enter() {
+#ifdef TMS_DEBUG_LOG
+        std::cout << "[torch_memory_saver.cpp] tms_region_enter" << std::endl;
+#endif
+        is_interesting_region_ = true;
+    }
+
+    void leave() {
+#ifdef TMS_DEBUG_LOG
+        std::cout << "[torch_memory_saver.cpp] tms_region_leave" << std::endl;
+#endif
+        is_interesting_region_ = false;
+    }
+
+    bool is_interesting_region() {
+        return is_interesting_region_;
+    }
+
+    void set_current_tag(const std::string& tag) {
+        current_tag_ = tag;
+    }
+
+    const std::string& get_current_tag() {
+        return current_tag_;
+    }
+}
+
 // ----------------------------------------------- primary class --------------------------------------------------
-
-class TmsThreadLocalContext {
-public:
-    TmsThreadLocalContext() : is_interesting_region_(false), tag_("default") {}
-    
-    bool is_interesting_region_;
-    std::string tag_;
-};
-
-static thread_local TmsThreadLocalContext current_thread_context_;
 
 struct _AllocationMetadata {
     size_t size;
@@ -144,18 +167,6 @@ public:
     TorchMemorySaver(const TorchMemorySaver&) = delete;
     TorchMemorySaver& operator=(const TorchMemorySaver&) = delete;
 
-    void set_current_tag(const std::string& tag) {
-        current_thread_context_.tag_ = tag;
-    }
-
-    bool is_interesting_region() const {
-        return current_thread_context_.is_interesting_region_;
-    }
-
-    void set_interesting_region(bool enabled) {
-        current_thread_context_.is_interesting_region_ = enabled;
-    }
-
     cudaError_t malloc(void **ptr, size_t size) {
         CUdevice device;
         CURESULT_CHECK(cuCtxGetDevice(&device));
@@ -168,13 +179,13 @@ public:
 
         {
             const std::lock_guard<std::mutex> lock(allocator_metadata_mutex_);
-            allocation_metadata_.emplace(*ptr, _AllocationMetadata{size, device, allocHandle, current_thread_context_.tag_});
+            allocation_metadata_.emplace(*ptr, _AllocationMetadata{size, device, allocHandle, RegionManager::get_current_tag()});
         }
 
 #ifdef TMS_DEBUG_LOG
         std::cout << "[torch_memory_saver.cpp] TorchMemorySaver.cuda_malloc "
                   << " ptr=" << ptr << " *ptr=" << *ptr << " size=" << size
-                  << " allocHandle=" << allocHandle << " tag=" << current_thread_context_.tag_
+                  << " allocHandle=" << allocHandle << " tag=" << RegionManager::get_current_tag()
                   << std::endl;
 #endif
 
@@ -267,18 +278,16 @@ private:
 // ------------------------------------------------- entrypoints ------------------------------------------------
 
 cudaError_t cudaMalloc(void **ptr, size_t size) {
-    TorchMemorySaver& saver = TorchMemorySaver::getInstance();
-    if (saver.is_interesting_region()) {
-        return saver.malloc(ptr, size);
+    if (RegionManager::is_interesting_region()) {
+        return TorchMemorySaver::getInstance().malloc(ptr, size);
     } else {
         return APIForwarder::call_real_cuda_malloc(ptr, size);
     }
 }
 
 cudaError_t cudaFree(void *ptr) {
-    TorchMemorySaver& saver = TorchMemorySaver::getInstance();
-    if (saver.is_interesting_region()) {
-        return saver.free(ptr);
+    if (RegionManager::is_interesting_region()) {
+        return TorchMemorySaver::getInstance().free(ptr);
     } else {
         return APIForwarder::call_real_cuda_free(ptr);
     }
@@ -286,11 +295,11 @@ cudaError_t cudaFree(void *ptr) {
 
 extern "C" {
 void tms_region_enter() {
-    TorchMemorySaver::getInstance().set_interesting_region(true);
+    RegionManager::enter();
 }
 
 void tms_region_leave() {
-    TorchMemorySaver::getInstance().set_interesting_region(false);
+    RegionManager::leave();
 }
 
 void tms_set_current_tag(const char* tag) {
@@ -298,7 +307,7 @@ void tms_set_current_tag(const char* tag) {
         std::cerr << "[torch_memory_saver.cpp] FATAL: NULL tag passed to tms_set_current_tag" << std::endl;
         exit(1);
     }
-    TorchMemorySaver::getInstance().set_current_tag(std::string(tag));
+    RegionManager::set_current_tag(std::string(tag));
 }
 
 void tms_pause(const char* tag) {

@@ -158,13 +158,7 @@ struct _AllocationMetadata {
 
 class TorchMemorySaver {
 public:
-    static TorchMemorySaver& getInstance() {
-        static TorchMemorySaver instance;
-        return instance;
-    }
-
-    TorchMemorySaver(const TorchMemorySaver&) = delete;
-    TorchMemorySaver& operator=(const TorchMemorySaver&) = delete;
+    TorchMemorySaver() {}
 
     cudaError_t malloc(void **ptr, size_t size) {
         CUdevice device;
@@ -267,9 +261,13 @@ public:
         }
     }
 
-private:
-    TorchMemorySaver() {}
+    static TorchMemorySaver &instance() {
+        static TorchMemorySaver instance;
+        return instance;
+    }
 
+
+private:
     std::mutex allocator_metadata_mutex_;
     std::unordered_map<void *, _AllocationMetadata> allocation_metadata_;
 };
@@ -278,7 +276,7 @@ private:
 
 cudaError_t cudaMalloc(void **ptr, size_t size) {
     if (RegionManager::is_interesting_region()) {
-        return TorchMemorySaver::getInstance().malloc(ptr, size);
+        return TorchMemorySaver::instance().malloc(ptr, size);
     } else {
         return APIForwarder::call_real_cuda_malloc(ptr, size);
     }
@@ -286,7 +284,7 @@ cudaError_t cudaMalloc(void **ptr, size_t size) {
 
 cudaError_t cudaFree(void *ptr) {
     if (RegionManager::is_interesting_region()) {
-        return TorchMemorySaver::getInstance().free(ptr);
+        return TorchMemorySaver::instance().free(ptr);
     } else {
         return APIForwarder::call_real_cuda_free(ptr);
     }
@@ -311,11 +309,11 @@ void tms_set_current_tag(const char* tag) {
 
 void tms_pause(const char* tag) {
     std::string tag_str = (tag != nullptr) ? std::string(tag) : "";
-    TorchMemorySaver::getInstance().pause(tag_str);
+    TorchMemorySaver::instance().pause(tag_str);
 }
 
 void tms_resume(const char* tag) {
     std::string tag_str = (tag != nullptr) ? std::string(tag) : "";
-    TorchMemorySaver::getInstance().resume(tag_str);
+    TorchMemorySaver::instance().resume(tag_str);
 }
 }

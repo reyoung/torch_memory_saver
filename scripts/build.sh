@@ -25,8 +25,9 @@ if [ -z "${SYSTEM_ARCH}" ]; then
     echo "### x86 Detected"
     if [ ${CUDA_VERSION} = "12.8" ]; then
       BUILDER_NAME="pytorch/manylinux2_28-builder"
-   else
+    else
       BUILDER_NAME="pytorch/manylinux-builder"
+    fi
   fi
 fi
 

@@ -26,6 +26,7 @@ class TorchMemorySaver:
                 try:
                     yield
                 finally:
+                    _global_info.binary_info.cdll.tms_set_current_tag(b"default")
                     _global_info.binary_info.cdll.tms_region_leave()
         else:
             yield

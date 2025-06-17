@@ -126,7 +126,7 @@ class TorchMemorySaver {
 public:
     TorchMemorySaver() {}
 
-    cudaError_t malloc(void **ptr, size_t size, const std::string& tag = "default") {
+    cudaError_t malloc(void **ptr, size_t size, const std::string& tag) {
         CUdevice device;
         CURESULT_CHECK(cuCtxGetDevice(&device));
 
@@ -174,7 +174,7 @@ public:
         return cudaSuccess;
     }
 
-    void pause(const std::string& tag = "") {
+    void pause(const std::string& tag) {
         const std::lock_guard <std::mutex> lock(allocator_metadata_mutex_);
 
         for (auto it = allocation_metadata_.begin(); it != allocation_metadata_.end(); ++it) {
@@ -197,7 +197,7 @@ public:
         }
     }
 
-    void resume(const std::string& tag = "") {
+    void resume(const std::string& tag) {
         const std::lock_guard <std::mutex> lock(allocator_metadata_mutex_);
 
         for (auto it = allocation_metadata_.begin(); it != allocation_metadata_.end(); ++it) {

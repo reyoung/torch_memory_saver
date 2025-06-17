@@ -1,14 +1,14 @@
 import logging
 import sys
 import time
+import os
 from typing import Callable
 
 import torch
-from torch_memory_saver import TorchMemorySaver
+from torch_memory_saver import torch_memory_saver
 
 logging.basicConfig(level=logging.DEBUG, stream=sys.stdout)
 
-memory_saver = TorchMemorySaver()
 dummy_tensor_size = (5, 100_000_000,)
 
 
@@ -22,7 +22,7 @@ class KVCache:
         self.create_buffers(1)
 
     def create_buffers(self, value):
-        with memory_saver.region():
+        with torch_memory_saver.region(tag="kv_cache"):
             # or model weights, etc
             self.kv_buffer = torch.full(dummy_tensor_size, value, dtype=torch.float32, device='cuda')
         print(f'create_buffers {_ptr(self.kv_buffer)=}')
@@ -72,20 +72,14 @@ def run():
     print(f'{static_output=}')
     assert static_output == 101, f'{static_output=}'
 
-    # cache.clear_buffers()
-
-    # with with_pauseable_mode():
-    #     big_tensor = torch.zeros((2_000_000_000,), dtype=torch.uint8, device='cuda')
-    #     print(f'{big_tensor=}')
-
     print('torch.cuda.empty_cache()')
     torch.cuda.empty_cache()
 
     print('sleep...')
     time.sleep(3)
 
-    print('call memory_saver.pause')
-    memory_saver.pause()
+    print('call memory_saver.pause("kv_cache")')
+    torch_memory_saver.pause("kv_cache")
 
     print('sleep...')
     time.sleep(3)
@@ -100,16 +94,11 @@ def run():
     print('sleep...')
     time.sleep(3)
 
-    # this should fail
-    # print(f'{cache.kv_buffer=}')
-
-    print('call memory_saver.resume')
-    memory_saver.resume()
+    print('call memory_saver.resume("kv_cache")')
+    torch_memory_saver.resume("kv_cache")
 
     dummy = torch.zeros((3,), device='cuda')
     print(f'{_ptr(dummy)=}')
-
-    # cache.create_buffers(2)
 
     cache.kv_buffer[...] = 2
 
@@ -122,8 +111,11 @@ def run():
     print('sleep...')
     time.sleep(3)
 
-    # print(f'{big_tensor=}')
     print(f'{dummy=}')
+
+    # exit this process gracefully, bypassing CUDA cleanup
+    # Checkout for more details: https://github.com/fzyzcjy/torch_memory_saver/pull/18 
+    os._exit(0)
 
 
 if __name__ == '__main__':

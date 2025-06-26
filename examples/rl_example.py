@@ -34,7 +34,7 @@ class Model:
     Validation objectives:
     1. Whether model weights can maintain functional integrity during pause/resume operations.
     2. Virtual address remains unchanged, but physical memory is reallocated.
-    3. Data needs to be reinitialized because physical memory content is lost.
+    3. Weights need to be reinitialized because physical memory content is lost.
     """
     def __init__(self, input_size=20_480, output_size=20_480):
         self.input_size = input_size
@@ -52,12 +52,11 @@ class Model:
             # Create a large linear layer weight matrix.
             # Size: 20480 * 20480 * 4 bytes ≈ 1.6GB
             self.linear = torch.nn.Linear(self.input_size, self.output_size, bias=False, device='cuda')
-            torch.nn.init.ones_(self.linear.weight)  # Initialize to all ones.
+            torch.nn.init.ones_(self.linear.weight)
         
         print(f'Model weights created: {_ptr(self.linear.weight)}')
     
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        """Forward propagation, returns the mean of the product of weights and input."""
         return self.linear(x).mean()
     
     def clear_weights(self):
@@ -68,10 +67,7 @@ class KVCache:
     """
     Simulate KV cache for validating memory management of cache data.
     
-    Validation objectives:
-    1. Whether KV cache can maintain data consistency during pause/resume operations.
-    2. Pause/resume operations on large memory blocks (2GB).
-    3. Verify that virtual address remains unchanged while physical memory is reallocated.
+    Verify that virtual address remains unchanged while physical memory is reallocated.
     """
     def __init__(self):
         self.create_buffers(1)

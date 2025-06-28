@@ -3,14 +3,19 @@
 # Get the absolute path of the script directory
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
+# Get Python version and platform info
+PYTHON_VERSION=$(python -c "import sys; print(f'{sys.version_info.major}.{sys.version_info.minor}')")
+PLATFORM=$(python -c "import platform; print(platform.machine())")
+
 # Build the path to torch_memory_saver_cpp.abi3.so
-# Assuming it's in the build/lib.linux-x86_64-cpython-312/ directory
-SO_PATH="$SCRIPT_DIR/../build/lib.linux-x86_64-cpython-312/torch_memory_saver_cpp.abi3.so"
+SO_PATH="$SCRIPT_DIR/../build/lib.linux-${PLATFORM}-cpython-${PYTHON_VERSION//./}/torch_memory_saver_cpp.abi3.so"
 
 # Check if the .so file exists
 if [ ! -f "$SO_PATH" ]; then
     echo "Error: $SO_PATH not found!"
-    echo "Please make sure torch_memory_saver is built correctly."
+    echo "Python version: $PYTHON_VERSION"
+    echo "Platform: $PLATFORM"
+    echo "Please make sure torch_memory_saver is built correctly for your Python version."
     exit 1
 fi
 

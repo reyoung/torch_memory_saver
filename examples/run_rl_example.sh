@@ -1,5 +1,3 @@
-#!/bin/bash
-
 # Get the absolute path of the script directory
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 

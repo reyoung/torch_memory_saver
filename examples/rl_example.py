@@ -1,3 +1,11 @@
+"""
+This example demonstrates the core functionalities of torch_memory_saver. It validates how virtual addresses
+remain unchanged while physical memory is released during pause and reallocated upon resume, illustrating the
+mechanisms of pausing and resuming memory regions, the implications for data consistency, and the preservation
+of functional integrity for tensor operations and CUDA graphs.
+"""
+
+
 import logging
 import os
 import sys

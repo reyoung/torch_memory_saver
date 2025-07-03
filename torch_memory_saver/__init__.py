@@ -14,7 +14,7 @@ logger = logging.getLogger(__name__)
 class TorchMemorySaver:
     def __init__(self):
         self._mem_pool = None
-        if os.environ.get("PYTORCH_CUDA_ALLOC_CONF") == "expandable_segments:True":
+        if "expandable_segments:True" in os.environ.get("PYTORCH_CUDA_ALLOC_CONF", ""):
             raise RuntimeError(
                 "TorchMemorySaver is disabled for the current process because expandable_segments is not supported yet (please create an issue if you need it)"
             )

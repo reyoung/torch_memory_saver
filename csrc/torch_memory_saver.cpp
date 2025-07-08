@@ -39,9 +39,12 @@
   do { \
     CUresult __result = (EXPR); \
     if (__result != CUDA_SUCCESS) { \
-        std::cerr << "[torch_memory_saver.cpp] CUresult error " \
-            << " result=" << __result << " file=" << __FILE__ << " func=" << __func__ << " line=" << __LINE__ \
-            << std::endl; \
+        const char* err_str = nullptr; \
+        cuGetErrorString(__result, &err_str); \
+        std::cerr << "[torch_memory_saver.cpp] CUresult error: " \
+                  << (__result) << " (" << (err_str ? err_str : "Unknown error") << ") " \
+                  << " file=" << __FILE__ << " func=" << __func__ << " line=" << __LINE__ \
+                  << std::endl; \
         exit(1); \
     } \
   } while (false)

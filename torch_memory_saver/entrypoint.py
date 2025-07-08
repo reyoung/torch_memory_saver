@@ -14,12 +14,7 @@ class TorchMemorySaver:
     def __init__(self):
         self._mem_pool = None
         self._binary_wrapper: Optional[BinaryWrapper] = None
-
-        TODO_move_check_to_real_init
-        if "expandable_segments:True" in os.environ.get("PYTORCH_CUDA_ALLOC_CONF", ""):
-            raise RuntimeError(
-                "TorchMemorySaver is disabled for the current process because expandable_segments is not supported yet (please create an issue if you need it)"
-            )
+        _sanity_checks()
 
     @contextmanager
     def region(self, tag: str = "default", enable_cpu_backup: bool = False):
@@ -63,3 +58,11 @@ class TorchMemorySaver:
     def _ensure_mem_pool(self):
         if self._mem_pool is None:
             self._mem_pool = torch.cuda.MemPool()
+
+
+def _sanity_checks():
+    TODO_move_check_to_real_init
+    if "expandable_segments:True" in os.environ.get("PYTORCH_CUDA_ALLOC_CONF", ""):
+        raise RuntimeError(
+            "TorchMemorySaver is disabled for the current process because expandable_segments is not supported yet (please create an issue if you need it)"
+        )

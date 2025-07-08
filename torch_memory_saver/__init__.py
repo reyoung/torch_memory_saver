@@ -113,7 +113,13 @@ _global_info = _GlobalInfo()
 torch_memory_saver = TorchMemorySaver()
 
 
-def get_binary_path():
+@contextmanager
+def configure_subprocess():
+    with _change_env("LD_PRELOAD", str(_get_binary_path())):
+        yield
+
+
+def _get_binary_path():
     dir_package = Path(__file__).parent
     TODO_handle_so_postfix
     candidates = [
@@ -122,19 +128,13 @@ def get_binary_path():
         for p in d.glob("torch_memory_saver_cpp.*.so")
     ]
     assert (
-        len(candidates) == 1
+            len(candidates) == 1
     ), f"Expected exactly one torch_memory_saver_cpp library, found: {candidates}"
     return candidates[0]
 
 
 @contextmanager
-def configure_subprocess():
-    with change_env("LD_PRELOAD", str(get_binary_path())):
-        yield
-
-
-@contextmanager
-def change_env(key: str, value: str):
+def _change_env(key: str, value: str):
     old_value = os.environ.get(key, "")
     os.environ[key] = value
     logger.debug(f"change_env set key={key} value={value}")

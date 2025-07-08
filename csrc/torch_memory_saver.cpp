@@ -34,7 +34,6 @@
     } \
   } while (false)
 
-// very naive
 #define CURESULT_CHECK(EXPR) \
   do { \
     CUresult __result = (EXPR); \

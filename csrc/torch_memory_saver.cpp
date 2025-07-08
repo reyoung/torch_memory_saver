@@ -321,7 +321,7 @@ cudaError_t cudaFree(void *ptr) {
 }
 #endif
 
-#ifndef TMS_HOOK_MODE_PRELOAD
+#ifdef TMS_HOOK_MODE_TORCH
 extern "C" {
 void *tms_torch_malloc(ssize_t size, int device, cudaStream_t stream) {
     SIMPLE_CHECK(thread_local_config.is_interesting_region_, "only support interesting region");

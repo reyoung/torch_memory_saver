@@ -11,6 +11,7 @@ from torch_memory_saver.testing_utils import get_and_print_gpu_memory
 logging.basicConfig(level=logging.DEBUG, stream=sys.stdout)
 
 dummy_tensor_size = (5, 100_000_000,)
+cuda_graph_intermediate_tensor_size = (1_000_000_000,)
 
 
 def _ptr(x):
@@ -33,10 +34,12 @@ class KVCache:
 
     def execute(self, arg: torch.Tensor) -> torch.Tensor:
         # print(f'KVCache.execute {arg=} {self.kv_buffer=}')
-        return (arg + self.kv_buffer.mean(dim=1)).mean()
+        ans_value = (arg + self.kv_buffer.mean(dim=1)).mean()
+        big_intermediate_tensor = (torch.ones(cuda_graph_intermediate_tensor_size, device='cuda') * ans_value).mean()
+        return big_intermediate_tensor
 
 
-# https://pytorch.org/blog/accelerating-pytorch-with-cuda-graphs/
+    # https://pytorch.org/blog/accelerating-pytorch-with-cuda-graphs/
 def create_cuda_graph(fn: Callable):
     # warmup
     s = torch.cuda.Stream()
@@ -48,7 +51,7 @@ def create_cuda_graph(fn: Callable):
 
     # capture
     g = torch.cuda.CUDAGraph()
-    with torch.cuda.graph(g):
+    with torch_memory_saver.cuda_graph(g):
         print('with torch.cuda.graph(g) execute fn')
         fn()
 

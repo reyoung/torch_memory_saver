@@ -5,7 +5,7 @@ import multiprocessing
 import traceback
 import torch_memory_saver
 
-from examples import simple, cuda_graph, cpu_backup
+from examples import simple, cuda_graph, cpu_backup, rl_example
 
 _HOOK_MODES = ["preload", "torch"]
 

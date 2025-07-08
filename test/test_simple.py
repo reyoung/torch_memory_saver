@@ -1,4 +1,4 @@
-from test.utils import run_in_subprocess
+from utils import run_in_subprocess
 
 
 def _test_simple_inner():

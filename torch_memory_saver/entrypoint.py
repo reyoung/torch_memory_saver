@@ -25,6 +25,7 @@ class TorchMemorySaver:
 
         self._ensure_binary_wrapper()
         self._ensure_mem_pool()
+
         with torch.cuda.use_mem_pool(self._mem_pool):
             self._binary_wrapper.cdll.tms_set_current_tag(tag.encode("utf-8"))
             self._binary_wrapper.cdll.tms_set_interesting_region(True)

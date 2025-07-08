@@ -3,22 +3,6 @@
 
 // #define TMS_DEBUG_LOG
 
-// ----------------------------------------------- copied code --------------------------------------------------
-
-// Cannot use pytorch (libc10.so) since LD_PRELOAD happens earlier than `import torch`
-// #include <ATen/cuda/Exceptions.h>
-
-// torch Macros.h
-#if defined(__GNUC__) || defined(__ICL) || defined(__clang__)
-#define C10_LIKELY(expr) (__builtin_expect(static_cast<bool>(expr), 1))
-#define C10_UNLIKELY(expr) (__builtin_expect(static_cast<bool>(expr), 0))
-#else
-#define C10_LIKELY(expr) (expr)
-#define C10_UNLIKELY(expr) (expr)
-#endif
-
-// ----------------------------------------------- utils --------------------------------------------------
-
 #define SIMPLE_CHECK(COND, MSG) \
   do { \
     if (!(COND)) { \
@@ -55,3 +39,13 @@
         exit(1); \
     } \
   } while (false)
+
+// Cannot use pytorch (libc10.so) since LD_PRELOAD happens earlier than `import torch`
+// Thus copy from torch Macros.h
+#if defined(__GNUC__) || defined(__ICL) || defined(__clang__)
+#define C10_LIKELY(expr) (__builtin_expect(static_cast<bool>(expr), 1))
+#define C10_UNLIKELY(expr) (__builtin_expect(static_cast<bool>(expr), 0))
+#else
+#define C10_LIKELY(expr) (expr)
+#define C10_UNLIKELY(expr) (expr)
+#endif

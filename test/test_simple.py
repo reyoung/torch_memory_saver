@@ -44,6 +44,10 @@ def _test_simple_inner():
 
     print(f'{normal_tensor=} {pauseable_tensor=}')
 
+    print(f'Before empty cache')
+    torch.cuda.empty_cache()
+    print(f'After empty cache')
+
     # TODO
     # # exit this process gracefully, bypassing CUDA cleanup
     # # Checkout for more details: https://github.com/fzyzcjy/torch_memory_saver/pull/18

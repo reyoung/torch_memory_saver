@@ -1,42 +1,18 @@
 import ctypes
 import logging
-import os
-from contextlib import contextmanager
-from dataclasses import dataclass
-from pathlib import Path
-from typing import Optional
-
-import torch
 
 logger = logging.getLogger(__name__)
 
 
-@dataclass
 class BinaryWrapper:
-    cdll: ctypes.CDLL
-    binary_path: str
+    def __init__(self, path_binary: str):
+        try:
+            self.cdll = ctypes.CDLL(path_binary)
+        except OSError as e:
+            logger.error(f"Failed to load CDLL from {path_binary}: {e}")
+            raise
 
-    @staticmethod
-    def compute():
-        TODO_refactor_this
-        TODO_throw_when_fail
-        env_ld_preload = os.environ.get("LD_PRELOAD", "")
-        if "torch_memory_saver" in env_ld_preload:
-            try:
-                cdll = ctypes.CDLL(env_ld_preload)
-                _setup_function_signatures(cdll)
-                return BinaryWrapper(cdll=cdll, binary_path=TODO)
-            except OSError as e:
-                logger.error(f"Failed to load CDLL from {env_ld_preload}: {e}")
-                return BinaryWrapper(cdll=None)
-        else:
-            print(
-                f"TorchMemorySaver is disabled for the current process because invalid LD_PRELOAD. "
-                f"You can use configure_subprocess() utility, "
-                f"or directly specify `LD_PRELOAD=/path/to/torch_memory_saver_cpp.some-postfix.so python your_script.py. "
-                f'(LD_PRELOAD="{env_ld_preload}" process_id={os.getpid()})'
-            )
-            return BinaryWrapper(cdll=None)
+        _setup_function_signatures(self.cdll)
 
     def set_config(self, *, tag: str, interesting_region: bool, enable_cpu_backup: bool):
         self.cdll.tms_set_current_tag(tag.encode("utf-8"))

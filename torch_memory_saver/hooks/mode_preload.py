@@ -5,14 +5,16 @@ from pathlib import Path
 
 logger = logging.getLogger(__name__)
 
+
 @contextmanager
 def configure_subprocess():
     """Configure environment variables for subprocesses. Only needed for hook_mode=preload."""
-    with _change_env("LD_PRELOAD", str(_get_binary_path())):
+    with _change_env("LD_PRELOAD", str(_get_binary_path_from_package())):
         yield
 
 
-def _get_binary_path():
+# TODO move?
+def _get_binary_path_from_package():
     dir_package = Path(__file__).parent
     candidates = [
         p
@@ -23,6 +25,17 @@ def _get_binary_path():
             len(candidates) == 1
     ), f"Expected exactly one torch_memory_saver_cpp library, found: {candidates}"
     return candidates[0]
+
+
+def get_binary_path_from_env():
+    env_ld_preload = os.environ.get("LD_PRELOAD", "")
+    assert "torch_memory_saver" in env_ld_preload, (
+        f"TorchMemorySaver observes invalid LD_PRELOAD. "
+        f"You can use configure_subprocess() utility, "
+        f"or directly specify `LD_PRELOAD=/path/to/torch_memory_saver_cpp.some-postfix.so python your_script.py. "
+        f'(LD_PRELOAD="{env_ld_preload}" process_id={os.getpid()})'
+    )
+    return env_ld_preload
 
 
 @contextmanager

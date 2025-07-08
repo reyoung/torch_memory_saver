@@ -1,4 +1,3 @@
-import os
 import torch
 import logging
 import multiprocessing
@@ -13,34 +12,23 @@ def get_and_print_gpu_memory(message, gpu_id=0):
     return mem
 
 
-def run_in_subprocess(fn, exit_without_cleanup: bool):
+def run_in_subprocess(fn):
     ctx = multiprocessing.get_context('spawn')
     output_queue = ctx.Queue()
-    proc = ctx.Process(
-        target=_subprocess_fn_wrapper,
-        args=(fn, output_queue,),
-        kwargs=dict(exit_without_cleanup=exit_without_cleanup),
-    )
+    proc = ctx.Process(target=_subprocess_fn_wrapper, args=(fn, output_queue,))
     proc.start()
     proc.join()
     success = output_queue.get()
     assert success
 
 
-def _subprocess_fn_wrapper(fn, output_queue, exit_without_cleanup: bool):
+def _subprocess_fn_wrapper(fn, output_queue):
     try:
         print(f"Subprocess execution start")
         logging.basicConfig(level=logging.DEBUG, stream=sys.stdout)
-
         fn()
-
         print(f"Subprocess execution end", flush=True)
         output_queue.put(True)
-
-        if exit_without_cleanup:
-            # Exit this process bypassing CUDA cleanup
-            # Checkout for more details: https://github.com/fzyzcjy/torch_memory_saver/pull/18
-            os._exit(0)
     except Exception as e:
         print(f"Subprocess has error: {e}", flush=True)
         traceback.print_exc()

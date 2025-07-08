@@ -42,7 +42,11 @@ setup(
     ext_modules=[
         setuptools.Extension(
             name,
-            ['csrc/torch_memory_saver.cpp'],
+            [
+                'csrc/api_forwarder.cpp',
+                'csrc/core.cpp',
+                'csrc/entrypoint.cpp',
+            ],
             include_dirs=include_dirs,
             library_dirs=library_dirs,
             libraries=['cuda'],

@@ -3,7 +3,7 @@
 #include <cuda_runtime_api.h>
 #include <cuda.h>
 
-// #define TMS_DEBUG_LOG
+#define TMS_DEBUG_LOG
 
 // Cannot use pytorch (libc10.so) since LD_PRELOAD happens earlier than `import torch`
 // Thus copy from torch Macros.h

@@ -2,13 +2,6 @@
 
 A PyTorch library that allows tensor memory to be temporarily released and resumed later.
 
-During the pause:
-- Physical memory is released
-- Virtual address is preserved
-
-When resume:
-- Virtual address is restored to the original one
-
 Please refer to https://github.com/sgl-project/sglang/issues/2542#issuecomment-2563641647 for details.
 
 ## Examples
@@ -31,6 +24,13 @@ memory_saver.pause()
 # 3. After `resume`, CUDA memory is re-occupied for those tensors.
 memory_saver.resume()
 ```
+
+During the pause:
+- Physical memory is released
+- Virtual address is preserved
+
+When resume:
+- Virtual address is restored to the original one
 
 ### Multiple Tags Example
 

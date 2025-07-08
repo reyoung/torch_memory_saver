@@ -16,9 +16,8 @@ namespace APIForwarder {
         return value;
     }
 
-    typedef cudaError_t (*CudaMallocFunc)(void **, size_t);
-
-    typedef cudaError_t (*CudaFreeFunc)(void *);
+    using CudaMallocFunc = cudaError_t (*)(void**, size_t);
+    using CudaFreeFunc   = cudaError_t (*)(void*);
 
     static CudaMallocFunc real_cudaMalloc = NULL;
     static CudaFreeFunc real_cudaFree = NULL;

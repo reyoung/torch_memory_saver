@@ -311,7 +311,7 @@ void tms_set_interesting_region(bool is_interesting_region) {
 
 void tms_set_current_tag(const char* tag) {
     SIMPLE_CHECK(tag != nullptr, "tag should not be null");
-    RegionManager::set_current_tag(std::string(tag));
+    thread_local_config.current_tag_ = tag;
 }
 
 void tms_set_enable_cpu_backup(bool enable_cpu_backup) {

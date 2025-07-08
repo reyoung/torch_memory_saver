@@ -48,18 +48,3 @@ def _setup_function_signatures(cdll):
     cdll.tms_set_enable_cpu_backup.argtypes = [ctypes.c_bool]
     cdll.tms_pause.argtypes = [ctypes.c_char_p]
     cdll.tms_resume.argtypes = [ctypes.c_char_p]
-
-
-class _GlobalInfo:
-    def __init__(self):
-        self._binary_info: Optional[_BinaryInfo] = None
-
-    @property
-    def binary_info(self):
-        if self._binary_info is None:
-            self._binary_info = _BinaryInfo.compute()
-        return self._binary_info
-
-
-TODO_maybe_rm_this
-_global_info = _GlobalInfo()

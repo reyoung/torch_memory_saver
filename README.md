@@ -21,12 +21,7 @@ torch_memory_saver.pause()
 torch_memory_saver.resume()
 ```
 
-During the pause:
-- Physical memory is released
-- Virtual address is preserved
-
-When resume:
-- Virtual address is kept unchanged, while physical memory is re-allocated
+During the pause, physical memory is released and virtual address is preserved. When resume, virtual address is kept unchanged, while physical memory is re-allocated
 
 ### Multiple Tags
 

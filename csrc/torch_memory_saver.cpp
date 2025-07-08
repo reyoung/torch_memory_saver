@@ -271,10 +271,7 @@ void tms_set_interesting_region(bool is_interesting_region) {
 }
 
 void tms_set_current_tag(const char* tag) {
-    if (tag == nullptr) {
-        std::cerr << "[torch_memory_saver.cpp] FATAL: NULL tag passed to tms_set_current_tag" << std::endl;
-        exit(1);
-    }
+    SIMPLE_CHECK(tag != nullptr, "tag should not be null");
     RegionManager::set_current_tag(std::string(tag));
 }
 

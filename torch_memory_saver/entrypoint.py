@@ -34,9 +34,9 @@ class TorchMemorySaver:
         """Similar to `torch.cuda.graph`, but ensures memory in it to be pauseable."""
         self._ensure_initialized()
         with self._impl.graph(
-            cuda_graph=cuda_graph,
-            pool=pool, stream=stream, capture_error_mode=capture_error_mode,
-            tag=tag, enable_cpu_backup=enable_cpu_backup,
+                cuda_graph=cuda_graph,
+                pool=pool, stream=stream, capture_error_mode=capture_error_mode,
+                tag=tag, enable_cpu_backup=enable_cpu_backup,
         ):
             yield
 
@@ -84,6 +84,10 @@ class _TorchMemorySaverImpl:
                 yield
             finally:
                 self._binary_wrapper.set_config(tag=_TAG_DEFAULT, interesting_region=False, enable_cpu_backup=False)
+
+    @contextmanager
+    def graph(self, cuda_graph, pool, stream, capture_error_mode, tag: str, enable_cpu_backup: bool):
+        TODO
 
     def pause(self, tag: Optional[str]):
         tag_bytes = tag.encode("utf-8") if tag else None

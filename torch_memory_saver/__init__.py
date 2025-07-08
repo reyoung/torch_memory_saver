@@ -26,12 +26,12 @@ class TorchMemorySaver:
             self._ensure_mem_pool()
             with torch.cuda.use_mem_pool(self._mem_pool):
                 _global_info.binary_info.cdll.tms_set_current_tag(tag.encode("utf-8"))
-                _global_info.binary_info.cdll.tms_region_enter()
+                _global_info.binary_info.cdll.tms_set_interesting_region(True)
                 try:
                     yield
                 finally:
                     _global_info.binary_info.cdll.tms_set_current_tag(b"default")
-                    _global_info.binary_info.cdll.tms_region_leave()
+                    _global_info.binary_info.cdll.tms_set_interesting_region(False)
         else:
             yield
 

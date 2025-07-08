@@ -34,14 +34,16 @@
     } \
   } while (false)
 
-// very naive
 #define CURESULT_CHECK(EXPR) \
   do { \
     CUresult __result = (EXPR); \
     if (__result != CUDA_SUCCESS) { \
-        std::cerr << "[torch_memory_saver.cpp] CUresult error " \
-            << " result=" << __result << " file=" << __FILE__ << " func=" << __func__ << " line=" << __LINE__ \
-            << std::endl; \
+        const char* err_str = nullptr; \
+        cuGetErrorString(__result, &err_str); \
+        std::cerr << "[torch_memory_saver.cpp] CUresult error: " \
+                  << (__result) << " (" << (err_str ? err_str : "Unknown error") << ") " \
+                  << " file=" << __FILE__ << " func=" << __func__ << " line=" << __LINE__ \
+                  << std::endl; \
         exit(1); \
     } \
   } while (false)
@@ -239,51 +241,26 @@ private:
 };
 
 
-// ----------------------------------------------- region manager --------------------------------------------------
+// ----------------------------------------------- threadlocal configs --------------------------------------------------
 
-namespace RegionManager {
-    static thread_local bool is_interesting_region_ = false;
-    static thread_local std::string current_tag_ = "default";
-
-    void enter() {
-#ifdef TMS_DEBUG_LOG
-        std::cout << "[torch_memory_saver.cpp] tms_region_enter" << std::endl;
-#endif
-        is_interesting_region_ = true;
-    }
-
-    void leave() {
-#ifdef TMS_DEBUG_LOG
-        std::cout << "[torch_memory_saver.cpp] tms_region_leave" << std::endl;
-#endif
-        is_interesting_region_ = false;
-    }
-
-    bool is_interesting_region() {
-        return is_interesting_region_;
-    }
-
-    void set_current_tag(const std::string& tag) {
-        current_tag_ = tag;
-    }
-
-    const std::string& get_current_tag() {
-        return current_tag_;
-    }
-}
+struct _ThreadLocalConfig {
+    bool is_interesting_region_ = false;
+    std::string current_tag_ = "default";
+};
+static thread_local _ThreadLocalConfig thread_local_config;
 
 // ------------------------------------------------- entrypoints ------------------------------------------------
 
 cudaError_t cudaMalloc(void **ptr, size_t size) {
-    if (RegionManager::is_interesting_region()) {
-        return TorchMemorySaver::instance().malloc(ptr, size, RegionManager::get_current_tag());
+    if (thread_local_config.is_interesting_region_) {
+        return TorchMemorySaver::instance().malloc(ptr, size, thread_local_config.current_tag_);
     } else {
         return APIForwarder::call_real_cuda_malloc(ptr, size);
     }
 }
 
 cudaError_t cudaFree(void *ptr) {
-    if (RegionManager::is_interesting_region()) {
+    if (thread_local_config.is_interesting_region_) {
         return TorchMemorySaver::instance().free(ptr);
     } else {
         return APIForwarder::call_real_cuda_free(ptr);
@@ -291,19 +268,12 @@ cudaError_t cudaFree(void *ptr) {
 }
 
 extern "C" {
-void tms_region_enter() {
-    RegionManager::enter();
-}
-
-void tms_region_leave() {
-    RegionManager::leave();
+void tms_set_interesting_region(bool is_interesting_region) {
+    thread_local_config.is_interesting_region_ = is_interesting_region;
 }
 
 void tms_set_current_tag(const char* tag) {
-    if (tag == nullptr) {
-        std::cerr << "[torch_memory_saver.cpp] FATAL: NULL tag passed to tms_set_current_tag" << std::endl;
-        exit(1);
-    }
+    SIMPLE_CHECK(tag != nullptr, "tag should not be null");
     RegionManager::set_current_tag(std::string(tag));
 }
 

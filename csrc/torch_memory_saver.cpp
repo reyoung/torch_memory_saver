@@ -41,7 +41,7 @@
         const char* err_str = nullptr; \
         cuGetErrorString(__result, &err_str); \
         std::cerr << "[torch_memory_saver.cpp] CUresult error: " \
-                  << (__result) << " (" << (err_str ? err_str : "Unknown error") << ") " \
+                  << __result << " (" << (err_str ? err_str : "Unknown error") << ") " \
                   << " file=" << __FILE__ << " func=" << __func__ << " line=" << __LINE__ \
                   << std::endl; \
         exit(1); \
@@ -50,11 +50,13 @@
 
 #define CUDA_ERROR_CHECK(EXPR) \
   do { \
-    cudaError __result = (EXPR); \
+    cudaError_t __result = (EXPR); \
     if (__result != cudaSuccess) { \
-        std::cerr << "[torch_memory_saver.cpp] cudaError error " \
-            << " result=" << __result << " file=" << __FILE__ << " func=" << __func__ << " line=" << __LINE__ \
-            << std::endl; \
+        const char* err_str = cudaGetErrorString(__result); \
+        std::cerr << "[torch_memory_saver.cpp] cudaError error: " \
+                  << __result << " (" << (err_str ? err_str : "Unknown error") << ") " \
+                  << " file=" << __FILE__ << " func=" << __func__ << " line=" << __LINE__ \
+                  << std::endl; \
         exit(1); \
     } \
   } while (false)

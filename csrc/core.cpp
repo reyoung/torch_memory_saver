@@ -3,6 +3,11 @@
 
 TorchMemorySaver::TorchMemorySaver() {}
 
+static TorchMemorySaver &TorchMemorySaver::instance() {
+    static TorchMemorySaver instance;
+    return instance;
+}
+
 cudaError_t TorchMemorySaver::malloc(void **ptr, CUdevice device, size_t size, const std::string& tag, const bool enable_cpu_backup) {
     CUmemGenericAllocationHandle allocHandle;
     CUDAUtils::cu_mem_create(&allocHandle, size, device);
@@ -117,9 +122,4 @@ void TorchMemorySaver::resume(const std::string& tag) {
 
         metadata.allocHandle = newAllocHandle;
     }
-}
-
-static TorchMemorySaver &TorchMemorySaver::instance() {
-    static TorchMemorySaver instance;
-    return instance;
 }

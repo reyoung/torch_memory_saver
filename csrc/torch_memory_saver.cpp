@@ -48,6 +48,17 @@
     } \
   } while (false)
 
+#define CUDA_ERROR_CHECK(EXPR) \
+  do { \
+    cudaError __result = (EXPR); \
+    if (__result != cudaSuccess) { \
+        std::cerr << "[torch_memory_saver.cpp] cudaError error " \
+            << " result=" << __result << " file=" << __FILE__ << " func=" << __func__ << " line=" << __LINE__ \
+            << std::endl; \
+        exit(1); \
+    } \
+  } while (false)
+
 namespace APIForwarder {
     static void *check_dlsym(void *value) {
         if (nullptr == value) {

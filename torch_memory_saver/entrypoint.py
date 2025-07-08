@@ -44,11 +44,14 @@ class TorchMemorySaver:
 
     @hook_mode.setter
     def hook_mode(self, hook_mode: HookMode):
+        assert self._impl_ctor_kwargs is not None, "Cannot configure after initialization"
         self._impl_ctor_kwargs["hook_mode"] = hook_mode
 
     def _ensure_initialized(self):
-        if self._impl is None:
-            self._impl = _TorchMemorySaverImpl(**self._impl_ctor_kwargs)
+        if self._impl is not None:
+            return
+        self._impl = _TorchMemorySaverImpl(**self._impl_ctor_kwargs)
+        self._impl_ctor_kwargs = None
 
 
 class _TorchMemorySaverImpl:

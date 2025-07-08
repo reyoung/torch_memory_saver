@@ -1,3 +1,5 @@
+"""Not to be used by end users, but only for tests of the package itself."""
+
 import torch
 
 

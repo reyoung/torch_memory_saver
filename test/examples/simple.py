@@ -5,7 +5,7 @@ from torch_memory_saver import torch_memory_saver
 
 import time
 
-from utils import get_and_print_gpu_memory
+from torch_memory_saver.testing_utils import get_and_print_gpu_memory
 
 
 def run(hook_mode: str):

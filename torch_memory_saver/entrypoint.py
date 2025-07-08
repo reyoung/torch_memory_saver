@@ -51,7 +51,7 @@ class TorchMemorySaver:
         if self._impl is not None:
             return
         self._impl = _TorchMemorySaverImpl(**self._impl_ctor_kwargs)
-        self._impl_ctor_kwargs = None
+        del self._impl_ctor_kwargs
 
 
 class _TorchMemorySaverImpl:

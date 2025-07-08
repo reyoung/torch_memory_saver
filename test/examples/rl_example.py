@@ -189,7 +189,7 @@ def run(hook_mode: str):
         raise ValueError(f'Expected 2048101, got {static_output}')
     print("✓ CUDA graph first execution passed!")
 
-    time.sleep(3)
+    time.sleep(1)
 
     # Pause memory regions
     print('\n=== Pausing memory regions ===')
@@ -199,7 +199,7 @@ def run(hook_mode: str):
     torch_memory_saver.pause("model_weights")
     get_and_print_gpu_memory("model_weights: released, kv_cache: released")
 
-    time.sleep(3)
+    time.sleep(1)
 
     # Resume memory regions
     print('\n=== Resuming memory regions ===')
@@ -208,7 +208,7 @@ def run(hook_mode: str):
     torch_memory_saver.resume("kv_cache")
     get_and_print_gpu_memory("model_weights: resumed, kv_cache: resumed")
 
-    time.sleep(3)
+    time.sleep(1)
 
     # Verify virtual addresses remain unchanged
     print('\n=== Virtual Address Verification ===')
@@ -225,7 +225,7 @@ def run(hook_mode: str):
     assert model_address_unchanged, f"Model weights virtual address changed"
     print("✓ Virtual addresses verification passed!")
 
-    time.sleep(3)
+    time.sleep(1)
 
     # Reinitialize data and test functionality
     print('\n=== Testing functionality after resume ===')
@@ -243,7 +243,7 @@ def run(hook_mode: str):
         raise ValueError(f'Expected 8192202, got {static_output}')
     print("✓ CUDA graph second execution passed!")
 
-    time.sleep(3)
+    time.sleep(1)
 
     # Test selective pause/resume
     print('\n=== Testing selective pause/resume ===')

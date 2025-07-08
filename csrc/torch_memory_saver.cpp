@@ -293,6 +293,7 @@ static thread_local _ThreadLocalConfig thread_local_config;
 
 // ------------------------------------------------- entrypoints ------------------------------------------------
 
+#ifdef TMS_HOOK_MODE_PRELOAD
 cudaError_t cudaMalloc(void **ptr, size_t size) {
     if (thread_local_config.is_interesting_region_) {
         return TorchMemorySaver::instance().malloc(ptr, size, thread_local_config.current_tag_, thread_local_config.enable_cpu_backup_);
@@ -308,8 +309,20 @@ cudaError_t cudaFree(void *ptr) {
         return APIForwarder::call_real_cuda_free(ptr);
     }
 }
+#endif
 
 extern "C" {
+
+#ifndef TMS_HOOK_MODE_PRELOAD
+void *tms_torch_malloc(ssize_t size, int device, cudaStream_t stream) {
+
+}
+
+void tms_torch_free(void *ptr, ssize_t ssize, int device, cudaStream_t stream) {
+
+}
+#endif
+
 void tms_set_interesting_region(bool is_interesting_region) {
     thread_local_config.is_interesting_region_ = is_interesting_region;
 }

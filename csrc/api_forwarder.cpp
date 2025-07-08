@@ -1,6 +1,9 @@
 #include "api_forwarder.h"
 
 namespace APIForwarder {
+    using CudaMallocFunc = cudaError_t (*)(void**, size_t);
+    using CudaFreeFunc = cudaError_t (*)(void*);
+
     static void *check_dlsym(void *value) {
         if (nullptr == value) {
             std::cerr << "[torch_memory_saver.cpp] dlsym failed dlerror=" << dlerror() << std::endl;
@@ -9,13 +12,10 @@ namespace APIForwarder {
         return value;
     }
 
-    using CudaMallocFunc = cudaError_t (*)(void**, size_t);
-    using CudaFreeFunc   = cudaError_t (*)(void*);
-
     static CudaMallocFunc real_cudaMalloc = NULL;
     static CudaFreeFunc real_cudaFree = NULL;
 
-    static cudaError_t call_real_cuda_malloc(void **ptr, size_t size) {
+    cudaError_t call_real_cuda_malloc(void **ptr, size_t size) {
         if (C10_UNLIKELY(nullptr == real_cudaMalloc)) {
             real_cudaMalloc = (CudaMallocFunc) check_dlsym(dlsym(RTLD_NEXT, "cudaMalloc"));
         }
@@ -31,7 +31,7 @@ namespace APIForwarder {
         return ret;
     }
 
-    static cudaError_t call_real_cuda_free(void *ptr) {
+    cudaError_t call_real_cuda_free(void *ptr) {
         if (C10_UNLIKELY(nullptr == real_cudaFree)) {
             real_cudaFree = (CudaFreeFunc) check_dlsym(dlsym(RTLD_NEXT, "cudaFree"));
         }

@@ -3,14 +3,13 @@ import sys
 import time
 import os
 
-from utils import run_in_subprocess
+from utils import run_in_subprocess, print_gpu_memory
 
 
 def _test_simple_inner():
     import torch
 
     from torch_memory_saver import torch_memory_saver
-    from examples.util import print_gpu_memory_gb
 
     normal_tensor = torch.full((1_000_000,), 100, dtype=torch.uint8, device='cuda')
 
@@ -20,7 +19,7 @@ def _test_simple_inner():
     original_address = pauseable_tensor.data_ptr()
     print(f"Pauseable tensor virtual address: 0x{original_address:x}")
 
-    print_gpu_memory_gb("Before pause")
+    print_gpu_memory("Before pause")
 
     print(f'{normal_tensor=} {pauseable_tensor=}')
 
@@ -28,13 +27,13 @@ def _test_simple_inner():
     time.sleep(3)
 
     torch_memory_saver.pause()
-    print_gpu_memory_gb("After pause")
+    print_gpu_memory("After pause")
 
     print('sleep...')
     time.sleep(3)
 
     torch_memory_saver.resume()
-    print_gpu_memory_gb("After resume")
+    print_gpu_memory("After resume")
 
     new_address = pauseable_tensor.data_ptr()
     print(f"Pauseable tensor virtual address: 0x{new_address:x}")

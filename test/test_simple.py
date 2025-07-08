@@ -4,7 +4,7 @@ from torch_memory_saver import torch_memory_saver, configure_subprocess
 
 import time
 
-from utils import run_in_subprocess, get_and_print_gpu_memory
+from utils import get_and_print_gpu_memory, configure_tms_and_run_in_subprocess
 
 
 def _test_simple_inner():
@@ -58,6 +58,4 @@ def _test_simple_inner():
 
 @pytest.mark.parametrize("hook_mode", ["preload", "torch"])
 def test_simple(hook_mode):
-    # TODO only configure for mode=preload
-    with configure_subprocess():
-        run_in_subprocess(_test_simple_inner, fn_kwargs=dict(hook_mode=hook_mode))
+    configure_tms_and_run_in_subprocess(_test_simple_inner, hook_mode=hook_mode)

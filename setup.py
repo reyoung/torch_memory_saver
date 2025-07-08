@@ -61,5 +61,5 @@ setup(
         ]
     ],
     python_requires=">=3.9",
-    packages=['torch_memory_saver'],
+    packages=setuptools.find_packages(include=["torch_memory_saver", "torch_memory_saver.*"]),
 )

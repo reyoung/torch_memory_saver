@@ -11,7 +11,7 @@ struct AllocationMetadata {
     CUdevice device;
     CUmemGenericAllocationHandle allocHandle;
     std::string tag;
-    bool enableCpuBackup;
+    bool enable_cpu_backup;
     void* cpu_backup;
 };
 

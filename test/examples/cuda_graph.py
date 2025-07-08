@@ -38,8 +38,9 @@ class KVCache:
         big_intermediate_tensor = (torch.ones(cuda_graph_intermediate_tensor_size, device='cuda') * ans_value).mean()
         return big_intermediate_tensor
 
-
     # https://pytorch.org/blog/accelerating-pytorch-with-cuda-graphs/
+
+
 def create_cuda_graph(fn: Callable):
     # warmup
     s = torch.cuda.Stream()
@@ -51,7 +52,7 @@ def create_cuda_graph(fn: Callable):
 
     # capture
     g = torch.cuda.CUDAGraph()
-    with torch_memory_saver.cuda_graph(g):
+    with torch_memory_saver.cuda_graph(g, tag="graph"):
         print('with torch.cuda.graph(g) execute fn')
         fn()
 
@@ -89,12 +90,19 @@ def run(hook_mode: str):
 
     print('call memory_saver.pause("kv_cache")')
     torch_memory_saver.pause("kv_cache")
-
     print('sleep...')
     time.sleep(1)
 
-    mem_after_pause = get_and_print_gpu_memory("After pause")
-    assert mem_before_pause - mem_after_pause > 400_000_000
+    mem_after_pause_kv_cache = get_and_print_gpu_memory("After pause kv_cache")
+    assert mem_before_pause - mem_after_pause_kv_cache > 400_000_000
+
+    print('call memory_saver.pause("graph")')
+    torch_memory_saver.pause("graph")
+    print('sleep...')
+    time.sleep(1)
+
+    mem_after_pause_graph = get_and_print_gpu_memory("After pause graph")
+    assert mem_after_pause_kv_cache - mem_after_pause_graph > 3_000_000_000
 
     print('when kv cache is released, we can allocate *other* big tensors')
     other_big_tensor = torch.zeros((2500_000_000,), dtype=torch.uint8, device='cuda')
@@ -106,6 +114,8 @@ def run(hook_mode: str):
     print('sleep...')
     time.sleep(1)
 
+    print('call memory_saver.resume("graph")')
+    torch_memory_saver.resume("graph")
     print('call memory_saver.resume("kv_cache")')
     torch_memory_saver.resume("kv_cache")
 

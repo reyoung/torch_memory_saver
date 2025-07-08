@@ -14,15 +14,15 @@ namespace APIForwarder {
         return value;
     }
 
-    static CudaMallocFunc real_cudaMalloc = NULL;
-    static CudaFreeFunc real_cudaFree = NULL;
+    static CudaMallocFunc real_cuda_malloc_ = NULL;
+    static CudaFreeFunc real_cuda_free_ = NULL;
 
     cudaError_t call_real_cuda_malloc(void **ptr, size_t size) {
-        if (C10_UNLIKELY(nullptr == real_cudaMalloc)) {
-            real_cudaMalloc = (CudaMallocFunc) check_dlsym(dlsym(RTLD_NEXT, "cudaMalloc"));
+        if (C10_UNLIKELY(nullptr == real_cuda_malloc_)) {
+            real_cuda_malloc_ = (CudaMallocFunc) check_dlsym(dlsym(RTLD_NEXT, "cudaMalloc"));
         }
 
-        cudaError_t ret = real_cudaMalloc(ptr, size);
+        cudaError_t ret = real_cuda_malloc_(ptr, size);
 
 #ifdef TMS_DEBUG_LOG
         std::cout << "[torch_memory_saver.cpp] cudaMalloc [MODE NORMAL]"
@@ -34,11 +34,11 @@ namespace APIForwarder {
     }
 
     cudaError_t call_real_cuda_free(void *ptr) {
-        if (C10_UNLIKELY(nullptr == real_cudaFree)) {
-            real_cudaFree = (CudaFreeFunc) check_dlsym(dlsym(RTLD_NEXT, "cudaFree"));
+        if (C10_UNLIKELY(nullptr == real_cuda_free_)) {
+            real_cuda_free_ = (CudaFreeFunc) check_dlsym(dlsym(RTLD_NEXT, "cudaFree"));
         }
 
-        cudaError_t ret = real_cudaFree(ptr);
+        cudaError_t ret = real_cuda_free_(ptr);
 
 #ifdef TMS_DEBUG_LOG
         std::cout << "[torch_memory_saver.cpp] cudaFree [MODE NORMAL]"

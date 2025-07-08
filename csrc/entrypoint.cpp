@@ -38,7 +38,7 @@ void *tms_torch_malloc(ssize_t size, int device, cudaStream_t stream) {
     SIMPLE_CHECK(thread_local_config.is_interesting_region_, "only support interesting region");
     void *ptr;
     TorchMemorySaver::instance().malloc(
-        &ptr, CUDAUtils::cu_device_get(), size, thread_local_config.current_tag_, thread_local_config.enable_cpu_backup_);
+        &ptr, CUDAUtils::cu_device_get(device), size, thread_local_config.current_tag_, thread_local_config.enable_cpu_backup_);
     return ptr;
 }
 

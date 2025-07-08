@@ -48,15 +48,11 @@ class _TorchMemorySaverImpl:
     @contextmanager
     def region(self, tag: str, enable_cpu_backup: bool):
         with torch.cuda.use_mem_pool(self._mem_pool):
-            self._binary_wrapper.cdll.tms_set_current_tag(tag.encode("utf-8"))
-            self._binary_wrapper.cdll.tms_set_interesting_region(True)
-            self._binary_wrapper.cdll.tms_set_enable_cpu_backup(enable_cpu_backup)
+            self._binary_wrapper.set_config(tag=tag, interesting_region=True, enable_cpu_backup=enable_cpu_backup)
             try:
                 yield
             finally:
-                self._binary_wrapper.cdll.tms_set_current_tag(b"default")
-                self._binary_wrapper.cdll.tms_set_interesting_region(False)
-                self._binary_wrapper.cdll.tms_set_enable_cpu_backup(False)
+                self._binary_wrapper.set_config(tag="default", interesting_region=False, enable_cpu_backup=False)
 
     def pause(self, tag: Optional[str]):
         tag_bytes = tag.encode("utf-8") if tag else None

@@ -6,7 +6,9 @@ import time
 from .utils import get_and_print_gpu_memory
 
 
-def run():
+def run(hook_mode: str):
+    torch_memory_saver.hook_mode = hook_mode
+
     normal_tensor = torch.full((1_000_000,), 100, dtype=torch.uint8, device='cuda')
 
     with torch_memory_saver.region():
@@ -56,4 +58,4 @@ def run():
 
 
 if __name__ == '__main__':
-    run()
+    run(hook_mode='torch')

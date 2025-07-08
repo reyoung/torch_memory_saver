@@ -25,7 +25,6 @@ def _configure_tms_and_run_in_subprocess(fn, hook_mode):
 
 def _configure_tms_and_run_in_subprocess_fn_wrapper(fn, hook_mode):
     logging.basicConfig(level=logging.DEBUG, stream=sys.stdout)
-    torch_memory_saver.torch_memory_saver.hook_mode = hook_mode
     fn()
 
 

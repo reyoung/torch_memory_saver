@@ -214,6 +214,7 @@ public:
                 if (nullptr == metadata.cpuBackup) {
                     CUDA_ERROR_CHECK(cudaMallocHost(&metadata.cpuBackup, metadata.size));
                 }
+                SIMPLE_CHECK(metadata.cpuBackup != nullptr, "cpuBackup should not be nullptr");
                 // TODO may use cudaMemcpyAsync if needed
                 CUDA_ERROR_CHECK(cudaMemcpy(metadata.cpuBackup, ptr, metadata.size, cudaMemcpyDeviceToHost));
             }

@@ -25,6 +25,21 @@ class TorchMemorySaver:
         with self._impl.region(tag=tag, enable_cpu_backup=enable_cpu_backup):
             yield
 
+    @contextmanager
+    def cuda_graph(
+            self,
+            cuda_graph, pool=None, stream=None, capture_error_mode='global',
+            tag: str = _TAG_DEFAULT, enable_cpu_backup: bool = False,
+    ):
+        """Similar to `torch.cuda.graph`, but ensures memory in it to be pauseable."""
+        self._ensure_initialized()
+        with self._impl.cuda_graph(
+                cuda_graph=cuda_graph,
+                pool=pool, stream=stream, capture_error_mode=capture_error_mode,
+                tag=tag, enable_cpu_backup=enable_cpu_backup,
+        ):
+            yield
+
     def pause(self, tag: Optional[str] = None):
         """Pause memory for specific tag or all memory if tag is None"""
         self._impl.pause(tag=tag)
@@ -56,6 +71,7 @@ class TorchMemorySaver:
 
 class _TorchMemorySaverImpl:
     def __init__(self, hook_mode: HookMode = "preload"):
+        self._hook_mode = hook_mode
         self._hook_util = HookUtilBase.create(hook_mode=hook_mode)
         self._binary_wrapper = BinaryWrapper(path_binary=self._hook_util.get_path_binary())
         self._mem_pool = torch.cuda.MemPool(allocator=self._hook_util.get_allocator())
@@ -64,11 +80,23 @@ class _TorchMemorySaverImpl:
     @contextmanager
     def region(self, tag: str, enable_cpu_backup: bool):
         with torch.cuda.use_mem_pool(self._mem_pool):
-            self._binary_wrapper.set_config(tag=tag, interesting_region=True, enable_cpu_backup=enable_cpu_backup)
-            try:
+            with self._with_region_config(tag=tag, enable_cpu_backup=enable_cpu_backup):
                 yield
-            finally:
-                self._binary_wrapper.set_config(tag=_TAG_DEFAULT, interesting_region=False, enable_cpu_backup=False)
+
+    @contextmanager
+    def cuda_graph(self, cuda_graph, pool, stream, capture_error_mode, tag: str, enable_cpu_backup: bool):
+        assert self._hook_mode == "preload", "Only hook_mode=preload supports pauseable CUDA Graph currently"
+        with torch.cuda.graph(cuda_graph, pool=pool, stream=stream, capture_error_mode=capture_error_mode):
+            with self._with_region_config(tag=tag, enable_cpu_backup=enable_cpu_backup):
+                yield
+
+    @contextmanager
+    def _with_region_config(self, tag: str, enable_cpu_backup: bool):
+        self._binary_wrapper.set_config(tag=tag, interesting_region=True, enable_cpu_backup=enable_cpu_backup)
+        try:
+            yield
+        finally:
+            self._binary_wrapper.set_config(tag=_TAG_DEFAULT, interesting_region=False, enable_cpu_backup=False)
 
     def pause(self, tag: Optional[str]):
         tag_bytes = tag.encode("utf-8") if tag else None

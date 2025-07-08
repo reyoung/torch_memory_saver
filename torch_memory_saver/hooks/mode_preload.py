@@ -1,9 +1,8 @@
 import logging
 import os
 from contextlib import contextmanager
-from pathlib import Path
-
-from synced_gitignored.torch_memory_saver.torch_memory_saver.hooks.base import HookUtilBase
+from torch_memory_saver.hooks.base import HookUtilBase
+from torch_memory_saver.utils import get_binary_path_from_package
 
 logger = logging.getLogger(__name__)
 
@@ -16,9 +15,8 @@ class HookUtilModePreload(HookUtilBase):
 @contextmanager
 def configure_subprocess():
     """Configure environment variables for subprocesses. Only needed for hook_mode=preload."""
-    with _change_env("LD_PRELOAD", str(_get_binary_path_from_package())):
+    with _change_env("LD_PRELOAD", str(get_binary_path_from_package())):
         yield
-
 
 
 def _get_binary_path_from_env():

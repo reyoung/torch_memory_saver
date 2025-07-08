@@ -1,13 +1,15 @@
+import torch
 import logging
 import multiprocessing
 import sys
 import traceback
-import subprocess
 
 
 def get_and_print_gpu_memory(message, gpu_id=0):
     """Print GPU memory usage with optional message"""
-    print(f"GPU {gpu_id} memory: {torch.cuda.device_memory_used(gpu_id) / 1024 ** 3:.2f} GB ({message})")
+    mem = torch.cuda.device_memory_used(gpu_id)
+    print(f"GPU {gpu_id} memory: {mem / 1024 ** 3:.2f} GB ({message})")
+    return mem
 
 
 def run_in_subprocess(fn):

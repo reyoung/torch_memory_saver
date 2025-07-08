@@ -8,11 +8,11 @@ from torch_memory_saver import torch_memory_saver
 
 print("Allocate tensor_with_backup")
 with torch_memory_saver.region(enable_cpu_backup=True):
-    tensor_with_backup = torch.full((10_000_000,), 10, dtype=torch.uint8, device='cuda')
+    tensor_with_backup = torch.full((20_000_000,), 10, dtype=torch.uint8, device='cuda')
 
 print("Allocate tensor_without_backup")
 with torch_memory_saver.region(enable_cpu_backup=False):
-    tensor_without_backup = torch.full((10_000_000,), 20, dtype=torch.uint8, device='cuda')
+    tensor_without_backup = torch.full((20_000_000,), 20, dtype=torch.uint8, device='cuda')
 
 print(f"{tensor_with_backup[:3]=} {tensor_without_backup[:3]=}")
 assert tensor_with_backup[:3].tolist() == [10, 10, 10]

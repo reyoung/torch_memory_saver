@@ -1,10 +1,9 @@
-#include <iostream>
 #include "core.h"
 #include "utils.h"
 
 TorchMemorySaver::TorchMemorySaver() {}
 
-static TorchMemorySaver &TorchMemorySaver::instance() {
+TorchMemorySaver &TorchMemorySaver::instance() {
     static TorchMemorySaver instance;
     return instance;
 }

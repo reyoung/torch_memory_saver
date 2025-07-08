@@ -27,7 +27,7 @@ def _subprocess_fn_wrapper(fn, output_queue):
         print(f"Subprocess execution start")
         logging.basicConfig(level=logging.DEBUG, stream=sys.stdout)
         fn()
-        print(f"Subprocess execution end", flush=True)
+        print(f"Subprocess execution end (may see error messages when CUDA exit which is normal)", flush=True)
         output_queue.put(True)
     except Exception as e:
         print(f"Subprocess has error: {e}", flush=True)

@@ -7,6 +7,7 @@ logger = logging.getLogger(__name__)
 
 @contextmanager
 def configure_subprocess():
+    """Configure environment variables for subprocesses. Only needed for hook_mode=preload."""
     with _change_env("LD_PRELOAD", str(_get_binary_path())):
         yield
 

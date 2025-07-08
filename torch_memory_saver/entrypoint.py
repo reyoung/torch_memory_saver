@@ -6,6 +6,7 @@ from typing import Optional
 import torch
 
 from .binary_wrapper import BinaryWrapper
+from .hooks.base import HookUtilBase
 
 logger = logging.getLogger(__name__)
 
@@ -43,8 +44,9 @@ class TorchMemorySaver:
 
 class _TorchMemorySaverImpl:
     def __init__(self):
-        self._binary_wrapper = BinaryWrapper(path_binary=TODO)
-        self._mem_pool = torch.cuda.MemPool(allocator=TODO)
+        hook_util: HookUtilBase = TODO
+        self._binary_wrapper = BinaryWrapper(path_binary=hook_util.get_path_binary())
+        self._mem_pool = torch.cuda.MemPool(allocator=hook_util.create_allocator())
         _sanity_checks()
 
     @contextmanager

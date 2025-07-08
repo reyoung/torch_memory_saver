@@ -3,7 +3,14 @@ import os
 from contextlib import contextmanager
 from pathlib import Path
 
+from synced_gitignored.torch_memory_saver.torch_memory_saver.hooks.base import HookUtilBase
+
 logger = logging.getLogger(__name__)
+
+
+class HookUtilModePreload(HookUtilBase):
+    def get_path_binary(self):
+        return _get_binary_path_from_env()
 
 
 @contextmanager
@@ -27,7 +34,7 @@ def _get_binary_path_from_package():
     return candidates[0]
 
 
-def get_binary_path_from_env():
+def _get_binary_path_from_env():
     env_ld_preload = os.environ.get("LD_PRELOAD", "")
     assert "torch_memory_saver" in env_ld_preload, (
         f"TorchMemorySaver observes invalid LD_PRELOAD. "

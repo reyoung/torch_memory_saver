@@ -84,7 +84,9 @@ class _TorchMemorySaverImpl:
 
     @contextmanager
     def graph(self, cuda_graph, pool, stream, capture_error_mode, tag: str, enable_cpu_backup: bool):
-        TODO
+        with torch.cuda.graph(cuda_graph, pool=pool, stream=stream, capture_error_mode=capture_error_mode):
+            with self._with_region_config(tag=tag, enable_cpu_backup=enable_cpu_backup):
+                yield
 
     @contextmanager
     def _with_region_config(self, tag: str, enable_cpu_backup: bool):

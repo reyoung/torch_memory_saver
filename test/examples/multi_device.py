@@ -40,6 +40,8 @@ def run(hook_mode: str):
 
     checker.check_and_update("alloc dev1_b", min_delta=(0, 0))
 
+    del dev0_a, dev0_b, dev1_a, dev1_b
+
 class _MemoryChecker:
     def __init__(self):
         self._prev = self._get("Initial")

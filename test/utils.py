@@ -1,3 +1,5 @@
+from contextlib import nullcontext
+
 import torch
 import logging
 import multiprocessing
@@ -14,13 +16,15 @@ def get_and_print_gpu_memory(message, gpu_id=0):
 
 
 def configure_tms_and_run_in_subprocess(fn, hook_mode):
-    if hook_mode == "preload":
-        with torch_memory_saver.configure_subprocess():
-            TODO
-    elif hook_mode == "torch":
-        TODO
-    else:
-        raise NotImplementedError
+    ctx = torch_memory_saver.configure_subprocess() if hook_mode == "preload" else nullcontext()
+    with ctx:
+        run_in_subprocess(_configure_tms_and_run_in_subprocess_fn_wrapper, fn_kwargs=dict(fn=fn, hook_mode=hook_mode))
+
+
+def _configure_tms_and_run_in_subprocess_fn_wrapper(fn, hook_mode):
+    logging.basicConfig(level=logging.DEBUG, stream=sys.stdout)
+    torch_memory_saver.torch_memory_saver.hook_mode = hook_mode
+    fn()
 
 
 def run_in_subprocess(fn, fn_kwargs):
@@ -36,7 +40,6 @@ def run_in_subprocess(fn, fn_kwargs):
 def _subprocess_fn_wrapper(fn, fn_kwargs, output_queue):
     try:
         print(f"Subprocess execution start")
-        logging.basicConfig(level=logging.DEBUG, stream=sys.stdout)
         fn(**fn_kwargs)
         print(f"Subprocess execution end (may see error messages when CUDA exit which is normal)", flush=True)
         output_queue.put(True)

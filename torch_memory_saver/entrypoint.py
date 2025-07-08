@@ -15,6 +15,7 @@ _TAG_DEFAULT = "default"
 
 class TorchMemorySaver:
     def __init__(self):
+        self._impl_ctor_kwargs = {}
         self._impl: Optional[_TorchMemorySaverImpl] = None
 
     @contextmanager
@@ -37,13 +38,21 @@ class TorchMemorySaver:
     def enabled(self):
         return True
 
+    @property
+    def hook_mode(self):
+        raise AttributeError
+
+    @hook_mode.setter
+    def hook_mode(self, hook_mode: HookMode):
+        self._impl_ctor_kwargs["hook_mode"] = hook_mode
+
     def _ensure_initialized(self):
         if self._impl is None:
-            self._impl = _TorchMemorySaverImpl(hook_mode=TODO)
+            self._impl = _TorchMemorySaverImpl(**self._impl_ctor_kwargs)
 
 
 class _TorchMemorySaverImpl:
-    def __init__(self, hook_mode: HookMode):
+    def __init__(self, hook_mode: HookMode = "preload"):
         hook_util = HookUtilBase.create(hook_mode=hook_mode)
         self._binary_wrapper = BinaryWrapper(path_binary=hook_util.get_path_binary())
         self._mem_pool = torch.cuda.MemPool(allocator=hook_util.create_allocator())

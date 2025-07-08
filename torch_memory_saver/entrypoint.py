@@ -9,13 +9,15 @@ from .binary_wrapper import BinaryWrapper
 
 logger = logging.getLogger(__name__)
 
+_TAG_DEFAULT = "default"
+
 
 class TorchMemorySaver:
     def __init__(self):
         self._impl: Optional[_TorchMemorySaverImpl] = None
 
     @contextmanager
-    def region(self, tag: str = "default", enable_cpu_backup: bool = False):
+    def region(self, tag: str = _TAG_DEFAULT, enable_cpu_backup: bool = False):
         """Context manager for memory saving with optional tag"""
         self._ensure_initialized()
         with self._impl.region(tag=tag, enable_cpu_backup=enable_cpu_backup):
@@ -52,7 +54,7 @@ class _TorchMemorySaverImpl:
             try:
                 yield
             finally:
-                self._binary_wrapper.set_config(tag="default", interesting_region=False, enable_cpu_backup=False)
+                self._binary_wrapper.set_config(tag=_TAG_DEFAULT, interesting_region=False, enable_cpu_backup=False)
 
     def pause(self, tag: Optional[str]):
         tag_bytes = tag.encode("utf-8") if tag else None

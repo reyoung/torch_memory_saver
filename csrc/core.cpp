@@ -64,13 +64,13 @@ void TorchMemorySaver::pause(const std::string& tag) {
             continue;
         }
 
-        if (metadata.enableCpuBackup) {
-            if (nullptr == metadata.cpuBackup) {
-                CUDA_ERROR_CHECK(cudaMallocHost(&metadata.cpuBackup, metadata.size));
+        if (metadata.enable_cpu_backup) {
+            if (nullptr == metadata.cpu_backup) {
+                CUDA_ERROR_CHECK(cudaMallocHost(&metadata.cpu_backup, metadata.size));
             }
-            SIMPLE_CHECK(metadata.cpuBackup != nullptr, "cpuBackup should not be nullptr");
+            SIMPLE_CHECK(metadata.cpu_backup != nullptr, "cpu_backup should not be nullptr");
             // TODO may use cudaMemcpyAsync if needed
-            CUDA_ERROR_CHECK(cudaMemcpy(metadata.cpuBackup, ptr, metadata.size, cudaMemcpyDeviceToHost));
+            CUDA_ERROR_CHECK(cudaMemcpy(metadata.cpu_backup, ptr, metadata.size, cudaMemcpyDeviceToHost));
         }
 
         CURESULT_CHECK(cuMemUnmap((CUdeviceptr) ptr, metadata.size));
@@ -80,7 +80,7 @@ void TorchMemorySaver::pause(const std::string& tag) {
         std::cout << "[torch_memory_saver.cpp] TorchMemorySaver.pause"
                   << " ptr=" << ptr << " metadata.size=" << metadata.size << " metadata.allocHandle="
                   << metadata.allocHandle << " tag=" << metadata.tag << " filter_tag=" << tag
-                  << " metadata.enableCpuBackup=" << metadata.enableCpuBackup
+                  << " metadata.enable_cpu_backup=" << metadata.enable_cpu_backup
                   << std::endl;
 #endif
     }
@@ -104,10 +104,10 @@ void TorchMemorySaver::resume(const std::string& tag) {
 
         CUDAUtils::cu_mem_set_access(ptr, metadata.size, metadata.device);
 
-        if (metadata.enableCpuBackup) {
-            SIMPLE_CHECK(metadata.cpuBackup != nullptr, "cpuBackup should not be nullptr");
+        if (metadata.enable_cpu_backup) {
+            SIMPLE_CHECK(metadata.cpu_backup != nullptr, "cpu_backup should not be nullptr");
             // TODO may use cudaMemcpyAsync if needed
-            CUDA_ERROR_CHECK(cudaMemcpy(ptr, metadata.cpuBackup, metadata.size, cudaMemcpyHostToDevice));
+            CUDA_ERROR_CHECK(cudaMemcpy(ptr, metadata.cpu_backup, metadata.size, cudaMemcpyHostToDevice));
             // maybe we can free host memory if needed (currently keep it there to reduce re-alloc time)
         }
 
@@ -116,7 +116,7 @@ void TorchMemorySaver::resume(const std::string& tag) {
                   << " ptr=" << ptr << " metadata.size=" << metadata.size << " (old)metadata.allocHandle="
                   << metadata.allocHandle
                   << " (new)newAllocHandle=" << newAllocHandle << " tag=" << metadata.tag << " filter_tag=" << tag
-                  << " metadata.enableCpuBackup=" << metadata.enableCpuBackup
+                  << " metadata.enable_cpu_backup=" << metadata.enable_cpu_backup
                   << std::endl;
 #endif
 

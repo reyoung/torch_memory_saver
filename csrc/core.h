@@ -12,7 +12,7 @@ struct AllocationMetadata {
     CUmemGenericAllocationHandle allocHandle;
     std::string tag;
     bool enableCpuBackup;
-    void* cpuBackup;
+    void* cpu_backup;
 };
 
 class TorchMemorySaver {

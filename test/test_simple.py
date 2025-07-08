@@ -1,3 +1,4 @@
+import pytest
 import torch
 from torch_memory_saver import torch_memory_saver, configure_subprocess
 
@@ -55,7 +56,8 @@ def _test_simple_inner():
     get_and_print_gpu_memory("After empty cache (tensor deleted)")
 
 
-def test_simple():
+@pytest.mark.parametrize("hook_mode", ["preload", "torch"])
+def test_simple(hook_mode):
     # TODO only configure for mode=preload
     with configure_subprocess():
-        run_in_subprocess(_test_simple_inner)
+        run_in_subprocess(_test_simple_inner, fn_kwargs=dict(hook_mode=hook_mode))

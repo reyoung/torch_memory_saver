@@ -54,7 +54,7 @@ class _MemoryChecker:
 
     def check_and_update(self, message: str, min_delta):
         curr = self._get(message)
-        assert all(curr_i - prev_i > min_delta for curr_i, prev_i in zip(curr, self._prev, strict=True))
+        assert all((curr_i - prev_i) > min_delta for curr_i, prev_i in zip(curr, self._prev, strict=True))
         self._prev = curr
 
 

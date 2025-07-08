@@ -196,7 +196,7 @@ public:
             }
 
             if (metadata.enableCpuBackup) {
-                if (metadata.cpuBackup == nullptr) {
+                if (nullptr == metadata.cpuBackup) {
                     CUDA_ERROR_CHECK(cudaMallocHost(&metadata.cpuBackup, metadata.size));
                 }
                 // TODO may use cudaMemcpyAsync if needed

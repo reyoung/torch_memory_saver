@@ -79,23 +79,23 @@ def run(hook_mode: str):
     torch.cuda.empty_cache()
 
     print('sleep...')
-    time.sleep(3)
+    time.sleep(1)
 
     print('call memory_saver.pause("kv_cache")')
     torch_memory_saver.pause("kv_cache")
 
     print('sleep...')
-    time.sleep(3)
+    time.sleep(1)
 
     print('when kv cache is released, we can allocate *other* big tensors')
     other_big_tensor = torch.zeros((2500_000_000,), dtype=torch.uint8, device='cuda')
     print('sleep...')
-    time.sleep(3)
+    time.sleep(1)
     print(f'{other_big_tensor=}')
     del other_big_tensor
     torch.cuda.empty_cache()
     print('sleep...')
-    time.sleep(3)
+    time.sleep(1)
 
     print('call memory_saver.resume("kv_cache")')
     torch_memory_saver.resume("kv_cache")
@@ -112,7 +112,7 @@ def run(hook_mode: str):
     assert static_output == 202, f'{static_output=}'
 
     print('sleep...')
-    time.sleep(3)
+    time.sleep(1)
 
     print(f'{dummy=}')
 

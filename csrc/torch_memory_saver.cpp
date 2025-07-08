@@ -204,7 +204,7 @@ public:
 
         for (auto it = allocation_metadata_.begin(); it != allocation_metadata_.end(); ++it) {
             void *ptr = it->first;
-            _AllocationMetadata metadata = it->second;
+            _AllocationMetadata& metadata = it->second;
 
             if (!tag.empty() && metadata.tag != tag) {
                 continue;

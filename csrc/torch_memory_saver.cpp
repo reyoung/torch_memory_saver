@@ -315,11 +315,17 @@ extern "C" {
 
 #ifndef TMS_HOOK_MODE_PRELOAD
 void *tms_torch_malloc(ssize_t size, int device, cudaStream_t stream) {
-
+    SIMPLE_CHECK(thread_local_config.is_interesting_region_, "only support interesting region");
+    TODO_device;
+    void *ptr;
+    TorchMemorySaver::instance().malloc(&ptr, size, thread_local_config.current_tag_, thread_local_config.enable_cpu_backup_);
+    return ptr;
 }
 
 void tms_torch_free(void *ptr, ssize_t ssize, int device, cudaStream_t stream) {
-
+    SIMPLE_CHECK(thread_local_config.is_interesting_region_, "only support interesting region");
+    TODO_device;
+    TorchMemorySaver::instance().free(ptr);
 }
 #endif
 

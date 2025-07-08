@@ -4,9 +4,8 @@ SHELL=/bin/bash
 
 .PHONY:reinstall
 reinstall:
-	rm -f ./*.so
+	rm -rf ./*.so ./build
 	pip uninstall torch_memory_saver -y
-	# pip install --no-cache-dir -e .
 	pip install --no-cache-dir .
 
 # Release

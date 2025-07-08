@@ -6,7 +6,6 @@ mechanisms of pausing and resuming memory regions, the implications for data con
 of functional integrity for tensor operations and CUDA graphs.
 """
 
-
 import logging
 import os
 import sys
@@ -15,9 +14,7 @@ from typing import Callable
 import torch
 import time
 from torch_memory_saver import torch_memory_saver
-from util import print_gpu_memory_gb
-
-logging.basicConfig(level=logging.DEBUG, stream=sys.stdout)
+from torch_memory_saver.testing_utils import get_and_print_gpu_memory
 
 # Define the size of a large tensor for simulating KV cache
 # Size: 5 * 100,000,000 * 4 bytes = 2GB
@@ -45,11 +42,12 @@ class Model:
     2. Virtual address remains unchanged, but physical memory is reallocated.
     3. Weights need to be reinitialized because physical memory content is lost.
     """
+
     def __init__(self, input_size=20_480, output_size=20_480):
         self.input_size = input_size
         self.output_size = output_size
         self.create_weights()
-    
+
     def create_weights(self):
         """
         Create model weights in the region managed by torch_memory_saver.
@@ -62,12 +60,12 @@ class Model:
             # Size: 20480 * 20480 * 4 bytes ≈ 1.6GB
             self.linear = torch.nn.Linear(self.input_size, self.output_size, bias=False, device='cuda')
             torch.nn.init.ones_(self.linear.weight)
-        
+
         print(f'Model weights created: {_ptr(self.linear.weight)}')
-    
+
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         return self.linear(x).mean()
-    
+
     def clear_weights(self):
         del self.linear
 
@@ -78,6 +76,7 @@ class KVCache:
     
     Verify that virtual address remains unchanged while physical memory is reallocated.
     """
+
     def __init__(self):
         self.create_buffers(1)
 
@@ -125,7 +124,7 @@ def create_cuda_graph(fn: Callable):
     return g
 
 
-def run():
+def run(hook_mode: str):
     """
     Main test function: validate the core functionality of torch_memory_saver.
     
@@ -157,13 +156,16 @@ def run():
        - CUDA graphs can still execute correctly (because virtual address remains unchanged).
        - Selective pause/resume functionality works normally.
     """
-    
+
+    torch_memory_saver.hook_mode = hook_mode
+    logging.basicConfig(level=logging.DEBUG, stream=sys.stdout)
+
     cache = KVCache()
     model = Model()
     original_kv_cache_ptr = _ptr(cache.kv_buffer)
     original_model_weights_ptr = _ptr(model.linear.weight)
     print(f'Original addresses - KV cache: {original_kv_cache_ptr}, Model weights: {original_model_weights_ptr}')
-    
+
     # Create static input/output tensors for CUDA graphs
     # These tensors are not managed by torch_memory_saver, addresses will change normally
     static_input = torch.zeros((20_480,), dtype=torch.float32, device='cuda')
@@ -187,43 +189,43 @@ def run():
         raise ValueError(f'Expected 2048101, got {static_output}')
     print("✓ CUDA graph first execution passed!")
 
-    time.sleep(3)
+    time.sleep(1)
 
     # Pause memory regions
     print('\n=== Pausing memory regions ===')
-    print_gpu_memory_gb("model_weights: allocated, kv_cache: allocated")
+    get_and_print_gpu_memory("model_weights: allocated, kv_cache: allocated")
     torch_memory_saver.pause("kv_cache")
-    print_gpu_memory_gb("model_weights: allocated, kv_cache: released")
+    get_and_print_gpu_memory("model_weights: allocated, kv_cache: released")
     torch_memory_saver.pause("model_weights")
-    print_gpu_memory_gb("model_weights: released, kv_cache: released")
+    get_and_print_gpu_memory("model_weights: released, kv_cache: released")
 
-    time.sleep(3)
+    time.sleep(1)
 
     # Resume memory regions
     print('\n=== Resuming memory regions ===')
     torch_memory_saver.resume("model_weights")
-    print_gpu_memory_gb("model_weights: resumed, kv_cache: released")
+    get_and_print_gpu_memory("model_weights: resumed, kv_cache: released")
     torch_memory_saver.resume("kv_cache")
-    print_gpu_memory_gb("model_weights: resumed, kv_cache: resumed")
+    get_and_print_gpu_memory("model_weights: resumed, kv_cache: resumed")
 
-    time.sleep(3)
+    time.sleep(1)
 
     # Verify virtual addresses remain unchanged
     print('\n=== Virtual Address Verification ===')
     kv_cache_ptr_after_resume = _ptr(cache.kv_buffer)
     model_weights_ptr_after_resume = _ptr(model.linear.weight)
-    
+
     kv_address_unchanged = kv_cache_ptr_after_resume == original_kv_cache_ptr
     model_address_unchanged = model_weights_ptr_after_resume == original_model_weights_ptr
-    
+
     print(f'KV cache address unchanged: {kv_address_unchanged}')
     print(f'Model weights address unchanged: {model_address_unchanged}')
-    
+
     assert kv_address_unchanged, f"KV cache virtual address changed"
     assert model_address_unchanged, f"Model weights virtual address changed"
     print("✓ Virtual addresses verification passed!")
 
-    time.sleep(3)
+    time.sleep(1)
 
     # Reinitialize data and test functionality
     print('\n=== Testing functionality after resume ===')
@@ -241,13 +243,13 @@ def run():
         raise ValueError(f'Expected 8192202, got {static_output}')
     print("✓ CUDA graph second execution passed!")
 
-    time.sleep(3)
+    time.sleep(1)
 
     # Test selective pause/resume
     print('\n=== Testing selective pause/resume ===')
     torch_memory_saver.pause("kv_cache")
-    print_gpu_memory_gb("model_weights: resumed, kv_cache: released")
-    
+    get_and_print_gpu_memory("model_weights: resumed, kv_cache: released")
+
     # Verify model weights can still be accessed
     try:
         _ = model.linear.weight[0, 0]
@@ -255,15 +257,14 @@ def run():
     except:
         print("✗ Model weights access failed")
         raise
-    
+
     torch_memory_saver.resume("kv_cache")
-    print_gpu_memory_gb("model_weights: resumed, kv_cache: resumed")
-    
+    get_and_print_gpu_memory("model_weights: resumed, kv_cache: resumed")
+
     print("✓ Selective pause/resume test passed!")
 
     print("\n🎉 All tests passed! torch_memory_saver is working correctly.")
-    os._exit(0)
 
 
 if __name__ == '__main__':
-    run()
+    run(hook_mode=sys.argv[1])

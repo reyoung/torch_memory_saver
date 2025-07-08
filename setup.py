@@ -3,7 +3,6 @@ import logging
 import os
 import shutil
 from pathlib import Path
-import platform
 import setuptools
 from setuptools import setup
 
@@ -39,15 +38,28 @@ library_dirs = [
 setup(
     name='torch_memory_saver',
     version='0.0.8',
-    ext_modules=[setuptools.Extension(
-        'torch_memory_saver_cpp',
-        ['csrc/torch_memory_saver.cpp'],
-        include_dirs=include_dirs,
-        library_dirs=library_dirs,
-        libraries=['cuda'],
-        define_macros=[('Py_LIMITED_API', '0x03090000')],
-        py_limited_api=True,
-    )],
+    ext_modules=[
+        setuptools.Extension(
+            name,
+            [
+                'csrc/api_forwarder.cpp',
+                'csrc/core.cpp',
+                'csrc/entrypoint.cpp',
+            ],
+            include_dirs=include_dirs,
+            library_dirs=library_dirs,
+            libraries=['cuda'],
+            define_macros=[
+                ('Py_LIMITED_API', '0x03090000'),
+                *extra_macros,
+            ],
+            py_limited_api=True,
+        )
+        for name, extra_macros in [
+            ('torch_memory_saver_hook_mode_preload', [('TMS_HOOK_MODE_PRELOAD', '1')]),
+            ('torch_memory_saver_hook_mode_torch', [('TMS_HOOK_MODE_TORCH', '1')]),
+        ]
+    ],
     python_requires=">=3.9",
-    packages=['torch_memory_saver'],
+    packages=setuptools.find_packages(include=["torch_memory_saver", "torch_memory_saver.*"]),
 )

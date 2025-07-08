@@ -6,6 +6,7 @@ from typing import Callable
 
 import torch
 from torch_memory_saver import torch_memory_saver
+from torch_memory_saver.testing_utils import get_and_print_gpu_memory
 
 logging.basicConfig(level=logging.DEBUG, stream=sys.stdout)
 
@@ -54,7 +55,10 @@ def create_cuda_graph(fn: Callable):
     return g
 
 
-def run():
+def run(hook_mode: str):
+    torch_memory_saver.hook_mode = hook_mode
+    logging.basicConfig(level=logging.DEBUG, stream=sys.stdout)
+
     cache = KVCache()
     static_input = torch.zeros((5,), dtype=torch.float32, device='cuda')
     static_output = torch.zeros((5,), dtype=torch.float32, device='cuda')
@@ -76,23 +80,28 @@ def run():
     torch.cuda.empty_cache()
 
     print('sleep...')
-    time.sleep(3)
+    time.sleep(1)
+
+    mem_before_pause = get_and_print_gpu_memory("Before pause")
 
     print('call memory_saver.pause("kv_cache")')
     torch_memory_saver.pause("kv_cache")
 
     print('sleep...')
-    time.sleep(3)
+    time.sleep(1)
+
+    mem_after_pause = get_and_print_gpu_memory("After pause")
+    assert mem_before_pause - mem_after_pause > 400_000_000
 
     print('when kv cache is released, we can allocate *other* big tensors')
     other_big_tensor = torch.zeros((2500_000_000,), dtype=torch.uint8, device='cuda')
     print('sleep...')
-    time.sleep(3)
+    time.sleep(1)
     print(f'{other_big_tensor=}')
     del other_big_tensor
     torch.cuda.empty_cache()
     print('sleep...')
-    time.sleep(3)
+    time.sleep(1)
 
     print('call memory_saver.resume("kv_cache")')
     torch_memory_saver.resume("kv_cache")
@@ -109,14 +118,10 @@ def run():
     assert static_output == 202, f'{static_output=}'
 
     print('sleep...')
-    time.sleep(3)
+    time.sleep(1)
 
     print(f'{dummy=}')
 
-    # exit this process gracefully, bypassing CUDA cleanup
-    # Checkout for more details: https://github.com/fzyzcjy/torch_memory_saver/pull/18 
-    os._exit(0)
-
 
 if __name__ == '__main__':
-    run()
+    run(hook_mode=sys.argv[1])

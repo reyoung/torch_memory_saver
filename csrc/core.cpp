@@ -1,20 +1,5 @@
 #include "core.h"
 
-// TODO unify variable cases etc
-struct _AllocationMetadata {
-    size_t size;
-    CUdevice device;
-    CUmemGenericAllocationHandle allocHandle;
-    std::string tag;
-    bool enableCpuBackup;
-    void* cpuBackup;
-};
-
-enum CopyDirection {
-    DEVICE_TO_HOST,
-    HOST_TO_DEVICE,
-};
-
 class TorchMemorySaver {
 public:
     TorchMemorySaver() {}
@@ -28,7 +13,7 @@ public:
 
         {
             const std::lock_guard<std::mutex> lock(allocator_metadata_mutex_);
-            allocation_metadata_.emplace(*ptr, _AllocationMetadata{size, device, allocHandle, tag, enable_cpu_backup, nullptr});
+            allocation_metadata_.emplace(*ptr, AllocationMetadata{size, device, allocHandle, tag, enable_cpu_backup, nullptr});
         }
 
 #ifdef TMS_DEBUG_LOG
@@ -42,7 +27,7 @@ public:
     }
 
     cudaError_t free(void *ptr) {
-        _AllocationMetadata metadata;
+        AllocationMetadata metadata;
         {
             const std::lock_guard <std::mutex> lock(allocator_metadata_mutex_);
             SIMPLE_CHECK(allocation_metadata_.count(ptr), "Trying to free a pointer not allocated here");
@@ -69,7 +54,7 @@ public:
 
         for (auto it = allocation_metadata_.begin(); it != allocation_metadata_.end(); ++it) {
             void *ptr = it->first;
-            _AllocationMetadata& metadata = it->second;
+            AllocationMetadata& metadata = it->second;
 
             if (!tag.empty() && metadata.tag != tag) {
                 continue;
@@ -102,7 +87,7 @@ public:
 
         for (auto it = allocation_metadata_.begin(); it != allocation_metadata_.end(); ++it) {
             void *ptr = it->first;
-            _AllocationMetadata &metadata = it->second;
+            AllocationMetadata &metadata = it->second;
 
             if (!tag.empty() && metadata.tag != tag) {
                 continue;
@@ -143,7 +128,7 @@ public:
 
 private:
     std::mutex allocator_metadata_mutex_;
-    std::unordered_map<void *, _AllocationMetadata> allocation_metadata_;
+    std::unordered_map<void *, AllocationMetadata> allocation_metadata_;
 };
 
 

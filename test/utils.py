@@ -1,4 +1,6 @@
+import logging
 import multiprocessing
+import sys
 import traceback
 
 
@@ -15,6 +17,7 @@ def run_in_subprocess(fn):
 def _subprocess_fn_wrapper(fn, output_queue):
     try:
         print(f"Subprocess execution start")
+        logging.basicConfig(level=logging.DEBUG, stream=sys.stdout)
         fn()
         print(f"Subprocess execution end", flush=True)
         output_queue.put(True)

@@ -6,6 +6,7 @@ from typing import Callable
 
 import torch
 from torch_memory_saver import torch_memory_saver
+from torch_memory_saver.testing_utils import get_and_print_gpu_memory
 
 logging.basicConfig(level=logging.DEBUG, stream=sys.stdout)
 
@@ -81,11 +82,16 @@ def run(hook_mode: str):
     print('sleep...')
     time.sleep(1)
 
+    mem_before_pause = get_and_print_gpu_memory("Before pause")
+
     print('call memory_saver.pause("kv_cache")')
     torch_memory_saver.pause("kv_cache")
 
     print('sleep...')
     time.sleep(1)
+
+    mem_after_pause = get_and_print_gpu_memory("After pause")
+    assert mem_before_pause - mem_after_pause > 400_000_000
 
     print('when kv cache is released, we can allocate *other* big tensors')
     other_big_tensor = torch.zeros((2500_000_000,), dtype=torch.uint8, device='cuda')

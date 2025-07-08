@@ -151,7 +151,8 @@ class TorchMemorySaver {
 public:
     TorchMemorySaver() {}
 
-    cudaError_t malloc(void **ptr, size_t size, const std::string& tag, const bool enable_cpu_backup) {
+    cudaError_t malloc(void **ptr, int device, size_t size, const std::string& tag, const bool enable_cpu_backup) {
+        TODO_device;
         CUdevice device;
         CURESULT_CHECK(cuCtxGetDevice(&device));
 
@@ -296,7 +297,8 @@ static thread_local _ThreadLocalConfig thread_local_config;
 #ifdef TMS_HOOK_MODE_PRELOAD
 cudaError_t cudaMalloc(void **ptr, size_t size) {
     if (thread_local_config.is_interesting_region_) {
-        return TorchMemorySaver::instance().malloc(ptr, size, thread_local_config.current_tag_, thread_local_config.enable_cpu_backup_);
+        int device = TODO;
+        return TorchMemorySaver::instance().malloc(ptr, device, size, thread_local_config.current_tag_, thread_local_config.enable_cpu_backup_);
     } else {
         return APIForwarder::call_real_cuda_malloc(ptr, size);
     }
@@ -316,15 +318,14 @@ extern "C" {
 #ifndef TMS_HOOK_MODE_PRELOAD
 void *tms_torch_malloc(ssize_t size, int device, cudaStream_t stream) {
     SIMPLE_CHECK(thread_local_config.is_interesting_region_, "only support interesting region");
-    TODO_device;
     void *ptr;
-    TorchMemorySaver::instance().malloc(&ptr, size, thread_local_config.current_tag_, thread_local_config.enable_cpu_backup_);
+    TorchMemorySaver::instance().malloc(&ptr, device, size, thread_local_config.current_tag_, thread_local_config.enable_cpu_backup_);
     return ptr;
 }
 
 void tms_torch_free(void *ptr, ssize_t ssize, int device, cudaStream_t stream) {
     SIMPLE_CHECK(thread_local_config.is_interesting_region_, "only support interesting region");
-    TODO_device;
+    // TODO handle `device`?
     TorchMemorySaver::instance().free(ptr);
 }
 #endif

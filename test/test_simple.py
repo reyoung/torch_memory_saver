@@ -19,7 +19,7 @@ def _test_simple_inner():
     mem_before_pause = get_and_print_gpu_memory("Before pause")
 
     print('sleep...')
-    time.sleep(3)
+    time.sleep(1)
 
     torch_memory_saver.pause()
     mem_after_pause = get_and_print_gpu_memory("After pause")
@@ -27,7 +27,7 @@ def _test_simple_inner():
     assert mem_before_pause - mem_after_pause > 0.9 * 1024 ** 3
 
     print('sleep...')
-    time.sleep(3)
+    time.sleep(1)
 
     torch_memory_saver.resume()
     mem_after_resume = get_and_print_gpu_memory("After resume")
@@ -40,7 +40,7 @@ def _test_simple_inner():
     assert original_address == new_address, 'Tensor virtual address should be the same'
 
     print('sleep...')
-    time.sleep(3)
+    time.sleep(1)
 
     print(f'{normal_tensor=} {pauseable_tensor=}')
 

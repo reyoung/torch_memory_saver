@@ -1,3 +1,5 @@
+import logging
+import sys
 import torch
 from torch_memory_saver import torch_memory_saver
 
@@ -8,6 +10,7 @@ from .utils import get_and_print_gpu_memory
 
 def run(hook_mode: str):
     torch_memory_saver.hook_mode = hook_mode
+    logging.basicConfig(level=logging.DEBUG, stream=sys.stdout)
 
     normal_tensor = torch.full((1_000_000,), 100, dtype=torch.uint8, device='cuda')
 

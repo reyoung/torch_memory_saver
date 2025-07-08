@@ -14,6 +14,7 @@ logger = logging.getLogger(__name__)
 @dataclass
 class BinaryWrapper:
     cdll: ctypes.CDLL
+    binary_path: str
 
     @staticmethod
     def compute():
@@ -24,7 +25,7 @@ class BinaryWrapper:
             try:
                 cdll = ctypes.CDLL(env_ld_preload)
                 _setup_function_signatures(cdll)
-                return BinaryWrapper(cdll=cdll)
+                return BinaryWrapper(cdll=cdll, binary_path=TODO)
             except OSError as e:
                 logger.error(f"Failed to load CDLL from {env_ld_preload}: {e}")
                 return BinaryWrapper(cdll=None)

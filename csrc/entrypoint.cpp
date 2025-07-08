@@ -4,12 +4,12 @@
 
 // ----------------------------------------------- threadlocal configs --------------------------------------------------
 
-struct _ThreadLocalConfig {
+struct ThreadLocalConfig {
     bool is_interesting_region_ = false;
     std::string current_tag_ = "default";
     bool enable_cpu_backup_ = false;
 };
-static thread_local _ThreadLocalConfig thread_local_config;
+static thread_local ThreadLocalConfig thread_local_config;
 
 // ------------------------------------------------- entrypoints :: hook ------------------------------------------------
 

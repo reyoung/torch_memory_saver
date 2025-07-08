@@ -1,5 +1,6 @@
 from torch_memory_saver.hooks.base import HookUtilBase
 from torch_memory_saver.utils import get_binary_path_from_package
+from torch.cuda.memory import CUDAPluggableAllocator
 
 
 class HookUtilModeTorch(HookUtilBase):
@@ -7,4 +8,4 @@ class HookUtilModeTorch(HookUtilBase):
         return str(get_binary_path_from_package("torch_memory_saver_hook_mode_torch"))
 
     def create_allocator(self):
-        return TODO
+        return CUDAPluggableAllocator(self.get_path_binary(), "mc_nvlink_malloc", "mc_nvlink_free")

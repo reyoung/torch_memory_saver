@@ -53,20 +53,20 @@
   } while (false)
 
 namespace CUDAUtils {
-    static void cu_mem_create(CUmemGenericAllocationHandle *allocHandle, size_t size, CUdevice device) {
+    static void cu_mem_create(CUmemGenericAllocationHandle *alloc_handle, size_t size, CUdevice device) {
         CUmemAllocationProp prop = {};
         prop.type = CU_MEM_ALLOCATION_TYPE_PINNED;
         prop.location.type = CU_MEM_LOCATION_TYPE_DEVICE;
         prop.location.id = device;
-        CURESULT_CHECK(cuMemCreate(allocHandle, size, &prop, 0));
+        CURESULT_CHECK(cuMemCreate(alloc_handle, size, &prop, 0));
     }
 
     static void cu_mem_set_access(void *ptr, size_t size, CUdevice device) {
-        CUmemAccessDesc accessDesc = {};
-        accessDesc.location.type = CU_MEM_LOCATION_TYPE_DEVICE;
-        accessDesc.location.id = device;
-        accessDesc.flags = CU_MEM_ACCESS_FLAGS_PROT_READWRITE;
-        CURESULT_CHECK(cuMemSetAccess((CUdeviceptr) ptr, size, &accessDesc, 1));
+        CUmemAccessDesc access_desc = {};
+        access_desc.location.type = CU_MEM_LOCATION_TYPE_DEVICE;
+        access_desc.location.id = device;
+        access_desc.flags = CU_MEM_ACCESS_FLAGS_PROT_READWRITE;
+        CURESULT_CHECK(cuMemSetAccess((CUdeviceptr) ptr, size, &access_desc, 1));
     }
 
     static CUdevice cu_ctx_get_device() {

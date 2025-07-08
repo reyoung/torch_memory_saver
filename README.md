@@ -4,25 +4,21 @@ A PyTorch library that allows tensor memory to be temporarily released and resum
 
 Please refer to https://github.com/sgl-project/sglang/issues/2542#issuecomment-2563641647 for details.
 
-## Examples
+## Examples and Features
 
 ### Basic Example
 
 ```python
-import torch_memory_saver
-
-memory_saver = torch_memory_saver.memory_saver
-
 # 1. For tensors that wants to be paused, create them within `region`
-with memory_saver.region():
+with torch_memory_saver.region():
     pauseable_tensor = torch.full((1_000_000_000,), 100, dtype=torch.uint8, device='cuda')
 
 # 2. After `pause`, CUDA memory is released for those tensors.
 # For example, check `nvidia-smi`'s memory usage to verify.
-memory_saver.pause()
+torch_memory_saver.pause()
 
 # 3. After `resume`, CUDA memory is re-occupied for those tensors.
-memory_saver.resume()
+torch_memory_saver.resume()
 ```
 
 During the pause:
@@ -30,15 +26,13 @@ During the pause:
 - Virtual address is preserved
 
 When resume:
-- Virtual address is restored to the original one
+- Virtual address is kept unchanged, while physical memory is re-allocated
 
-### Multiple Tags Example
+### Multiple Tags
 
 Please refer to https://github.com/sgl-project/sglang/issues/7009 for details.
 
 ```python
-from torch_memory_saver import torch_memory_saver
-
 # 1. Create tensors with different tags
 with torch_memory_saver.region(tag="type1"):
     tensor1 = torch.full((5_000_000_000,), 100, dtype=torch.uint8, device='cuda')
@@ -50,12 +44,27 @@ with torch_memory_saver.region(tag="type2"):
 torch_memory_saver.pause("type1")
 torch_memory_saver.pause("type2")
 
-
 torch_memory_saver.resume("type2")
 torch_memory_saver.resume("type1")
 
 torch_memory_saver.pause("type1")
 torch_memory_saver.resume("type1")
+```
+
+### CPU Backup
+
+By default, in order to save time, the content is thrown away. This is useful for, for example, KV cache that are to be staled, or model weights that are to be updated.
+
+If you want the tensor content to be kept unchanged, use `enable_cpu_backup`.
+
+```python
+with torch_memory_saver.region(enable_cpu_backup=True):
+    tensor1 = torch.full((5_000_000_000,), 42, dtype=torch.uint8, device='cuda')
+
+torch_memory_saver.pause()
+torch_memory_saver.resume()
+
+assert tensor1[0] == 42, "content is kept unchanged"
 ```
 
 ### Example of RL with CUDA Graph

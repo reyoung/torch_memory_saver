@@ -1,4 +1,6 @@
+#include <iostream>
 #include "api_forwarder.h"
+#include "utils.h"
 
 namespace APIForwarder {
     using CudaMallocFunc = cudaError_t (*)(void**, size_t);

@@ -3,8 +3,9 @@ import traceback
 
 
 def run_in_subprocess(fn):
-    output_queue = multiprocessing.Queue()
-    proc = multiprocessing.Process(target=_subprocess_fn_wrapper, args=(fn, output_queue,))
+    ctx = multiprocessing.get_context('spawn')
+    output_queue = ctx.Queue()
+    proc = ctx.Process(target=_subprocess_fn_wrapper, args=(fn, output_queue,))
     proc.start()
     proc.join()
     success = output_queue.get()

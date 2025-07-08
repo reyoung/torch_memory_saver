@@ -1,13 +1,11 @@
 import pytest
 from contextlib import nullcontext
 
-import logging
 import multiprocessing
-import sys
 import traceback
 import torch_memory_saver
 
-from .examples import simple
+from examples import simple
 
 _HOOK_MODES = ["preload", "torch"]
 

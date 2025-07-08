@@ -41,7 +41,7 @@ class KVCache:
     # https://pytorch.org/blog/accelerating-pytorch-with-cuda-graphs/
 
 
-def create_cuda_graph(fn: Callable):
+def create_cuda_graph(fn: Callable, hook_mode):
     # warmup
     s = torch.cuda.Stream()
     s.wait_stream(torch.cuda.current_stream())
@@ -52,7 +52,12 @@ def create_cuda_graph(fn: Callable):
 
     # capture
     g = torch.cuda.CUDAGraph()
-    with torch_memory_saver.cuda_graph(g, tag="graph"):
+    ctx = (
+        torch_memory_saver.cuda_graph(g, tag="graph")
+        if hook_mode == "preload" else
+        torch.cuda.graph(g)
+    )
+    with ctx:
         print('with torch.cuda.graph(g) execute fn')
         fn()
 
@@ -72,7 +77,7 @@ def run(hook_mode: str):
         nonlocal static_output
         static_output = cache.execute(static_input)
 
-    g = create_cuda_graph(fn)
+    g = create_cuda_graph(fn, hook_mode=hook_mode)
 
     print('replay #1')
     static_input[...] = 100
@@ -96,13 +101,14 @@ def run(hook_mode: str):
     mem_after_pause_kv_cache = get_and_print_gpu_memory("After pause kv_cache")
     assert mem_before_pause - mem_after_pause_kv_cache > 400_000_000
 
-    print('call memory_saver.pause("graph")')
-    torch_memory_saver.pause("graph")
-    print('sleep...')
-    time.sleep(1)
+    if hook_mode == "preload":
+        print('call memory_saver.pause("graph")')
+        torch_memory_saver.pause("graph")
+        print('sleep...')
+        time.sleep(1)
 
-    mem_after_pause_graph = get_and_print_gpu_memory("After pause graph")
-    assert mem_after_pause_kv_cache - mem_after_pause_graph > 3_000_000_000
+        mem_after_pause_graph = get_and_print_gpu_memory("After pause graph")
+        assert mem_after_pause_kv_cache - mem_after_pause_graph > 3_000_000_000
 
     print('when kv cache is released, we can allocate *other* big tensors')
     other_big_tensor = torch.zeros((2500_000_000,), dtype=torch.uint8, device='cuda')
@@ -114,8 +120,9 @@ def run(hook_mode: str):
     print('sleep...')
     time.sleep(1)
 
-    print('call memory_saver.resume("graph")')
-    torch_memory_saver.resume("graph")
+    if hook_mode == "preload":
+        print('call memory_saver.resume("graph")')
+        torch_memory_saver.resume("graph")
     print('call memory_saver.resume("kv_cache")')
     torch_memory_saver.resume("kv_cache")
 

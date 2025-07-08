@@ -3,7 +3,6 @@ import logging
 import os
 import shutil
 from pathlib import Path
-import platform
 import setuptools
 from setuptools import setup
 

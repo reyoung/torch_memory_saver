@@ -29,7 +29,9 @@
 #define SIMPLE_CHECK(COND, MSG) \
   do { \
     if (!(COND)) { \
-        std::cerr << "[torch_memory_saver.cpp] " << MSG << std::endl; \
+        std::cerr << "[torch_memory_saver.cpp] " << MSG \
+                  << " file=" << __FILE__ << " func=" << __func__ << " line=" << __LINE__ \
+                  << std::endl; \
         exit(1); \
     } \
   } while (false)
@@ -41,7 +43,20 @@
         const char* err_str = nullptr; \
         cuGetErrorString(__result, &err_str); \
         std::cerr << "[torch_memory_saver.cpp] CUresult error: " \
-                  << (__result) << " (" << (err_str ? err_str : "Unknown error") << ") " \
+                  << __result << " (" << (err_str ? err_str : "Unknown error") << ") " \
+                  << " file=" << __FILE__ << " func=" << __func__ << " line=" << __LINE__ \
+                  << std::endl; \
+        exit(1); \
+    } \
+  } while (false)
+
+#define CUDA_ERROR_CHECK(EXPR) \
+  do { \
+    cudaError_t __result = (EXPR); \
+    if (__result != cudaSuccess) { \
+        const char* err_str = cudaGetErrorString(__result); \
+        std::cerr << "[torch_memory_saver.cpp] cudaError error: " \
+                  << __result << " (" << (err_str ? err_str : "Unknown error") << ") " \
                   << " file=" << __FILE__ << " func=" << __func__ << " line=" << __LINE__ \
                   << std::endl; \
         exit(1); \
@@ -117,18 +132,26 @@ namespace CUDAUtils {
 
 // ----------------------------------------------- primary class --------------------------------------------------
 
+// TODO unify variable cases etc
 struct _AllocationMetadata {
     size_t size;
     CUdevice device;
     CUmemGenericAllocationHandle allocHandle;
     std::string tag;
+    bool enableCpuBackup;
+    void* cpuBackup;
+};
+
+enum CopyDirection {
+    DEVICE_TO_HOST,
+    HOST_TO_DEVICE,
 };
 
 class TorchMemorySaver {
 public:
     TorchMemorySaver() {}
 
-    cudaError_t malloc(void **ptr, size_t size, const std::string& tag) {
+    cudaError_t malloc(void **ptr, size_t size, const std::string& tag, const bool enable_cpu_backup) {
         CUdevice device;
         CURESULT_CHECK(cuCtxGetDevice(&device));
 
@@ -140,7 +163,7 @@ public:
 
         {
             const std::lock_guard<std::mutex> lock(allocator_metadata_mutex_);
-            allocation_metadata_.emplace(*ptr, _AllocationMetadata{size, device, allocHandle, tag});
+            allocation_metadata_.emplace(*ptr, _AllocationMetadata{size, device, allocHandle, tag, enable_cpu_backup, nullptr});
         }
 
 #ifdef TMS_DEBUG_LOG
@@ -181,10 +204,19 @@ public:
 
         for (auto it = allocation_metadata_.begin(); it != allocation_metadata_.end(); ++it) {
             void *ptr = it->first;
-            _AllocationMetadata metadata = it->second;
+            _AllocationMetadata& metadata = it->second;
 
             if (!tag.empty() && metadata.tag != tag) {
                 continue;
+            }
+
+            if (metadata.enableCpuBackup) {
+                if (nullptr == metadata.cpuBackup) {
+                    CUDA_ERROR_CHECK(cudaMallocHost(&metadata.cpuBackup, metadata.size));
+                }
+                SIMPLE_CHECK(metadata.cpuBackup != nullptr, "cpuBackup should not be nullptr");
+                // TODO may use cudaMemcpyAsync if needed
+                CUDA_ERROR_CHECK(cudaMemcpy(metadata.cpuBackup, ptr, metadata.size, cudaMemcpyDeviceToHost));
             }
 
             CURESULT_CHECK(cuMemUnmap((CUdeviceptr) ptr, metadata.size));
@@ -194,6 +226,7 @@ public:
             std::cout << "[torch_memory_saver.cpp] TorchMemorySaver.pause"
                       << " ptr=" << ptr << " metadata.size=" << metadata.size << " metadata.allocHandle="
                       << metadata.allocHandle << " tag=" << metadata.tag << " filter_tag=" << tag
+                      << " metadata.enableCpuBackup=" << metadata.enableCpuBackup
                       << std::endl;
 #endif
         }
@@ -217,11 +250,19 @@ public:
 
             CUDAUtils::cu_mem_set_access(ptr, metadata.size, metadata.device);
 
+            if (metadata.enableCpuBackup) {
+                SIMPLE_CHECK(metadata.cpuBackup != nullptr, "cpuBackup should not be nullptr");
+                // TODO may use cudaMemcpyAsync if needed
+                CUDA_ERROR_CHECK(cudaMemcpy(ptr, metadata.cpuBackup, metadata.size, cudaMemcpyHostToDevice));
+                // maybe we can free host memory if needed (currently keep it there to reduce re-alloc time)
+            }
+
 #ifdef TMS_DEBUG_LOG
             std::cout << "[torch_memory_saver.cpp] TorchMemorySaver.resume"
                       << " ptr=" << ptr << " metadata.size=" << metadata.size << " (old)metadata.allocHandle="
                       << metadata.allocHandle
                       << " (new)newAllocHandle=" << newAllocHandle << " tag=" << metadata.tag << " filter_tag=" << tag
+                      << " metadata.enableCpuBackup=" << metadata.enableCpuBackup
                       << std::endl;
 #endif
 
@@ -246,6 +287,7 @@ private:
 struct _ThreadLocalConfig {
     bool is_interesting_region_ = false;
     std::string current_tag_ = "default";
+    bool enable_cpu_backup_ = false;
 };
 static thread_local _ThreadLocalConfig thread_local_config;
 
@@ -253,7 +295,7 @@ static thread_local _ThreadLocalConfig thread_local_config;
 
 cudaError_t cudaMalloc(void **ptr, size_t size) {
     if (thread_local_config.is_interesting_region_) {
-        return TorchMemorySaver::instance().malloc(ptr, size, thread_local_config.current_tag_);
+        return TorchMemorySaver::instance().malloc(ptr, size, thread_local_config.current_tag_, thread_local_config.enable_cpu_backup_);
     } else {
         return APIForwarder::call_real_cuda_malloc(ptr, size);
     }
@@ -274,7 +316,11 @@ void tms_set_interesting_region(bool is_interesting_region) {
 
 void tms_set_current_tag(const char* tag) {
     SIMPLE_CHECK(tag != nullptr, "tag should not be null");
-    RegionManager::set_current_tag(std::string(tag));
+    thread_local_config.current_tag_ = tag;
+}
+
+void tms_set_enable_cpu_backup(bool enable_cpu_backup) {
+    thread_local_config.enable_cpu_backup_ = enable_cpu_backup;
 }
 
 void tms_pause(const char* tag) {

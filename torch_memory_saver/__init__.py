@@ -20,18 +20,20 @@ class TorchMemorySaver:
             )
 
     @contextmanager
-    def region(self, tag: str = "default"):
+    def region(self, tag: str = "default", enable_cpu_backup: bool = False):
         """Context manager for memory saving with optional tag"""
         if _global_info.binary_info.enabled:
             self._ensure_mem_pool()
             with torch.cuda.use_mem_pool(self._mem_pool):
                 _global_info.binary_info.cdll.tms_set_current_tag(tag.encode("utf-8"))
                 _global_info.binary_info.cdll.tms_set_interesting_region(True)
+                _global_info.binary_info.cdll.tms_set_enable_cpu_backup(enable_cpu_backup)
                 try:
                     yield
                 finally:
                     _global_info.binary_info.cdll.tms_set_current_tag(b"default")
                     _global_info.binary_info.cdll.tms_set_interesting_region(False)
+                    _global_info.binary_info.cdll.tms_set_enable_cpu_backup(False)
         else:
             yield
 
@@ -67,9 +69,9 @@ class _BinaryInfo:
     @staticmethod
     def _setup_function_signatures(cdll):
         """Define function signatures for the C library"""
-        cdll.tms_region_enter.argtypes = []
-        cdll.tms_region_leave.argtypes = []
         cdll.tms_set_current_tag.argtypes = [ctypes.c_char_p]
+        cdll.tms_set_interesting_region.argtypes = [ctypes.c_bool]
+        cdll.tms_set_enable_cpu_backup.argtypes = [ctypes.c_bool]
         cdll.tms_pause.argtypes = [ctypes.c_char_p]
         cdll.tms_resume.argtypes = [ctypes.c_char_p]
 

@@ -54,11 +54,6 @@ def _test_simple_inner():
     torch.cuda.empty_cache()
     get_and_print_gpu_memory("After empty cache (tensor deleted)")
 
-    # TODO
-    # # exit this process gracefully, bypassing CUDA cleanup
-    # # Checkout for more details: https://github.com/fzyzcjy/torch_memory_saver/pull/18
-    # os._exit(0)
-
 
 def test_simple():
     # TODO only configure for mode=preload

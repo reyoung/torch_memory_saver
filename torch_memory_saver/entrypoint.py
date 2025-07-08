@@ -71,6 +71,7 @@ class TorchMemorySaver:
 
 class _TorchMemorySaverImpl:
     def __init__(self, hook_mode: HookMode = "preload"):
+        self._hook_mode = hook_mode
         self._hook_util = HookUtilBase.create(hook_mode=hook_mode)
         self._binary_wrapper = BinaryWrapper(path_binary=self._hook_util.get_path_binary())
         self._mem_pool = torch.cuda.MemPool(allocator=self._hook_util.get_allocator())
@@ -84,6 +85,7 @@ class _TorchMemorySaverImpl:
 
     @contextmanager
     def cuda_graph(self, cuda_graph, pool, stream, capture_error_mode, tag: str, enable_cpu_backup: bool):
+        assert self._hook_mode == "preload", "Only hook_mode=preload supports pauseable CUDA Graph currently"
         with torch.cuda.graph(cuda_graph, pool=pool, stream=stream, capture_error_mode=capture_error_mode):
             with self._with_region_config(tag=tag, enable_cpu_backup=enable_cpu_backup):
                 yield

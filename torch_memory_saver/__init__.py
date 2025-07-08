@@ -70,7 +70,7 @@ class _BinaryInfo:
     def _setup_function_signatures(cdll):
         """Define function signatures for the C library"""
         cdll.tms_set_current_tag.argtypes = [ctypes.c_char_p]
-        cdll.tms_interesting_region.argtypes = [ctypes.c_bool]
+        cdll.tms_set_interesting_region.argtypes = [ctypes.c_bool]
         cdll.tms_set_enable_cpu_backup.argtypes = [ctypes.c_bool]
         cdll.tms_pause.argtypes = [ctypes.c_char_p]
         cdll.tms_resume.argtypes = [ctypes.c_char_p]

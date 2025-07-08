@@ -1,4 +1,5 @@
 import torch
+from torch_memory_saver import torch_memory_saver, configure_subprocess
 
 import time
 
@@ -6,8 +7,6 @@ from utils import run_in_subprocess, get_and_print_gpu_memory
 
 
 def _test_simple_inner():
-    from torch_memory_saver import torch_memory_saver
-
     normal_tensor = torch.full((1_000_000,), 100, dtype=torch.uint8, device='cuda')
 
     with torch_memory_saver.region():
@@ -52,4 +51,5 @@ def _test_simple_inner():
 
 
 def test_simple():
-    run_in_subprocess(_test_simple_inner)
+    with configure_subprocess():
+        run_in_subprocess(_test_simple_inner)

@@ -113,10 +113,6 @@ def run():
 
     print(f'{dummy=}')
 
-    # exit this process gracefully, bypassing CUDA cleanup
-    # Checkout for more details: https://github.com/fzyzcjy/torch_memory_saver/pull/18 
-    os._exit(0)
-
 
 if __name__ == '__main__':
     run()

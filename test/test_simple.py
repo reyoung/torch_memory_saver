@@ -44,9 +44,16 @@ def _test_simple_inner():
 
     print(f'{normal_tensor=} {pauseable_tensor=}')
 
-    print(f'Before empty cache')
+    get_and_print_gpu_memory("Before empty cache")
     torch.cuda.empty_cache()
-    print(f'After empty cache')
+    get_and_print_gpu_memory("After empty cache")
+
+    del normal_tensor
+    del pauseable_tensor
+
+    get_and_print_gpu_memory("Before empty cache (tensor deleted)")
+    torch.cuda.empty_cache()
+    get_and_print_gpu_memory("After empty cache (tensor deleted)")
 
     # TODO
     # # exit this process gracefully, bypassing CUDA cleanup

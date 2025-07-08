@@ -264,7 +264,6 @@ def run(hook_mode: str):
     print("✓ Selective pause/resume test passed!")
 
     print("\n🎉 All tests passed! torch_memory_saver is working correctly.")
-    os._exit(0)
 
 
 if __name__ == '__main__':

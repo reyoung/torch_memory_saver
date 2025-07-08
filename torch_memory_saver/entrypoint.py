@@ -12,8 +12,8 @@ logger = logging.getLogger(__name__)
 
 class TorchMemorySaver:
     def __init__(self):
-        self._mem_pool = None
         self._binary_wrapper: Optional[BinaryWrapper] = None
+        self._mem_pool = None
         _sanity_checks()
 
     @contextmanager
@@ -23,6 +23,7 @@ class TorchMemorySaver:
             yield
             return
 
+        self._ensure_binary_wrapper()
         self._ensure_mem_pool()
         with torch.cuda.use_mem_pool(self._mem_pool):
             self._binary_wrapper.cdll.tms_set_current_tag(tag.encode("utf-8"))
@@ -54,6 +55,10 @@ class TorchMemorySaver:
     @property
     def enabled(self):
         return self._binary_wrapper.enabled
+
+    def _ensure_binary_wrapper(self):
+        if self._binary_wrapper is None:
+            self._binary_wrapper = BinaryWrapper.compute()
 
     def _ensure_mem_pool(self):
         if self._mem_pool is None:

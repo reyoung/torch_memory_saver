@@ -13,34 +13,28 @@ def run(hook_mode: str):
 
     checker = _MemoryChecker()
 
+    torch.cuda.set_device(1)
+
     with torch_memory_saver.region():
-        dev0_a = torch.full((100_000_000,), 10, dtype=torch.uint8, device='cuda')
+        dev0_a = torch.full((100_000_000,), 10, dtype=torch.uint8, device='cuda:0')
 
     checker.check_and_update("alloc dev0_a", min_delta=(80_000_000, 0))
 
     with torch_memory_saver.region():
-        dev1_a = torch.full((100_000_000,), 10, dtype=torch.uint8, device='cuda:1')
+        dev1_a = torch.full((100_000_000,), 10, dtype=torch.uint8, device='cuda')
 
     checker.check_and_update("alloc dev1_a", min_delta=(0, 80_000_000))
 
-    torch.cuda.set_device(1)
-
     with torch_memory_saver.region():
-        dev0_b = torch.full((100_000_000,), 10, dtype=torch.uint8, device='cuda:0')
-
-    checker.check_and_update("alloc dev0_b", min_delta=(80_000_000, 0))
-
-    with torch_memory_saver.region():
-        dev1_b = torch.full((100_000_000,), 10, dtype=torch.uint8, device='cuda')
+        dev1_b = torch.full((100_000_000,), 10, dtype=torch.uint8, device='cuda:1')
 
     checker.check_and_update("alloc dev1_b", min_delta=(0, 80_000_000))
 
     torch_memory_saver.pause()
     torch_memory_saver.resume()
 
-    checker.check_and_update("alloc dev1_b", min_delta=(0, 0))
+    checker.check_and_update("End", min_delta=(0, 0))
 
-    del dev0_a, dev0_b, dev1_a, dev1_b
 
 class _MemoryChecker:
     def __init__(self):

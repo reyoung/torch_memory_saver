@@ -4,8 +4,6 @@ import sys
 import traceback
 import subprocess
 
-import torch.cuda
-
 
 def print_gpu_memory(message, gpu_id=0):
     """Print GPU memory usage with optional message"""

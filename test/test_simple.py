@@ -5,7 +5,7 @@ import multiprocessing
 import traceback
 import torch_memory_saver
 
-from examples import simple, cuda_graph
+from examples import simple, cuda_graph, cpu_backup
 
 _HOOK_MODES = ["preload", "torch"]
 
@@ -18,6 +18,11 @@ def test_simple(hook_mode):
 @pytest.mark.parametrize("hook_mode", _HOOK_MODES)
 def test_cuda_graph(hook_mode):
     _test_core(cuda_graph.run, hook_mode=hook_mode)
+
+
+@pytest.mark.parametrize("hook_mode", _HOOK_MODES)
+def test_cpu_backup(hook_mode):
+    _test_core(cpu_backup.run, hook_mode=hook_mode)
 
 
 def _test_core(fn, hook_mode):

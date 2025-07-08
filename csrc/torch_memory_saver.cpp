@@ -196,7 +196,11 @@ public:
             }
 
             if (metadata.enableCpuBackup) {
-                TODO;
+                if (metadata.cpuBackup == nullptr) {
+                    CUDA_ERROR_CHECK(cudaMallocHost(&metadata.cpuBackup, metadata.size));
+                }
+                // TODO may use cudaMemcpyAsync if needed
+                CUDA_ERROR_CHECK(cudaMemcpy(metadata.cpuBackup, ptr, metadata.size, cudaMemcpyDeviceToHost));
             }
 
             CURESULT_CHECK(cuMemUnmap((CUdeviceptr) ptr, metadata.size));
@@ -230,7 +234,10 @@ public:
             CUDAUtils::cu_mem_set_access(ptr, metadata.size, metadata.device);
 
             if (metadata.enableCpuBackup) {
-                TODO;
+                SIMPLE_CHECK(metadata.cpuBackup != nullptr, "cpuBackup should not be nullptr");
+                // TODO may use cudaMemcpyAsync if needed
+                CUDA_ERROR_CHECK(cudaMemcpy(ptr, metadata.cpuBackup, metadata.size, cudaMemcpyHostToDevice));
+                // maybe we can free host memory if needed (currently keep it there to reduce re-alloc time)
             }
 
 #ifdef TMS_DEBUG_LOG

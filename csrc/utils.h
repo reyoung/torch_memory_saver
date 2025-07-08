@@ -50,3 +50,33 @@
 #define C10_LIKELY(expr) (expr)
 #define C10_UNLIKELY(expr) (expr)
 #endif
+
+namespace CUDAUtils {
+    static void cu_mem_create(CUmemGenericAllocationHandle *allocHandle, size_t size, CUdevice device) {
+        CUmemAllocationProp prop = {};
+        prop.type = CU_MEM_ALLOCATION_TYPE_PINNED;
+        prop.location.type = CU_MEM_LOCATION_TYPE_DEVICE;
+        prop.location.id = device;
+        CURESULT_CHECK(cuMemCreate(allocHandle, size, &prop, 0));
+    }
+
+    static void cu_mem_set_access(void *ptr, size_t size, CUdevice device) {
+        CUmemAccessDesc accessDesc = {};
+        accessDesc.location.type = CU_MEM_LOCATION_TYPE_DEVICE;
+        accessDesc.location.id = device;
+        accessDesc.flags = CU_MEM_ACCESS_FLAGS_PROT_READWRITE;
+        CURESULT_CHECK(cuMemSetAccess((CUdeviceptr) ptr, size, &accessDesc, 1));
+    }
+
+    static CUdevice cu_ctx_get_device() {
+        CUdevice ans;
+        CURESULT_CHECK(cuCtxGetDevice(&ans));
+        return ans;
+    }
+
+    static CUdevice cu_device_get(int device_ordinal) {
+        CUdevice ans;
+        CURESULT_CHECK(cuDeviceGet(&ans, device_ordinal));
+        return ans;
+    }
+}

@@ -56,9 +56,9 @@ class TorchMemorySaver:
 
 class _TorchMemorySaverImpl:
     def __init__(self, hook_mode: HookMode = "preload"):
-        self.hook_util = HookUtilBase.create(hook_mode=hook_mode)
-        self._binary_wrapper = BinaryWrapper(path_binary=self.hook_util.get_path_binary())
-        self._mem_pool = torch.cuda.MemPool(allocator=self.hook_util.get_allocator())
+        self._hook_util = HookUtilBase.create(hook_mode=hook_mode)
+        self._binary_wrapper = BinaryWrapper(path_binary=self._hook_util.get_path_binary())
+        self._mem_pool = torch.cuda.MemPool(allocator=self._hook_util.get_allocator())
         _sanity_checks()
 
     @contextmanager

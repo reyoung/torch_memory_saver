@@ -1,5 +1,3 @@
-import logging
-import sys
 import time
 import os
 
@@ -45,9 +43,10 @@ def _test_simple_inner():
 
     print(f'{normal_tensor=} {pauseable_tensor=}')
 
-    # exit this process gracefully, bypassing CUDA cleanup
-    # Checkout for more details: https://github.com/fzyzcjy/torch_memory_saver/pull/18
-    os._exit(0)
+    # TODO
+    # # exit this process gracefully, bypassing CUDA cleanup
+    # # Checkout for more details: https://github.com/fzyzcjy/torch_memory_saver/pull/18
+    # os._exit(0)
 
 
 def test_simple():

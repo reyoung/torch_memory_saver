@@ -128,6 +128,12 @@ namespace CUDAUtils {
         accessDesc.flags = CU_MEM_ACCESS_FLAGS_PROT_READWRITE;
         CURESULT_CHECK(cuMemSetAccess((CUdeviceptr) ptr, size, &accessDesc, 1));
     }
+
+    static CUdevice cu_ctx_get_device() {
+        CUdevice device;
+        CURESULT_CHECK(cuCtxGetDevice(&device));
+        return device;
+    }
 }
 
 // ----------------------------------------------- primary class --------------------------------------------------
@@ -151,11 +157,7 @@ class TorchMemorySaver {
 public:
     TorchMemorySaver() {}
 
-    cudaError_t malloc(void **ptr, int device, size_t size, const std::string& tag, const bool enable_cpu_backup) {
-        TODO_device;
-        CUdevice device;
-        CURESULT_CHECK(cuCtxGetDevice(&device));
-
+    cudaError_t malloc(void **ptr, CUdevice device, size_t size, const std::string& tag, const bool enable_cpu_backup) {
         CUmemGenericAllocationHandle allocHandle;
         CUDAUtils::cu_mem_create(&allocHandle, size, device);
         CURESULT_CHECK(cuMemAddressReserve((CUdeviceptr *) ptr, size, 0, 0, 0));
@@ -297,8 +299,8 @@ static thread_local _ThreadLocalConfig thread_local_config;
 #ifdef TMS_HOOK_MODE_PRELOAD
 cudaError_t cudaMalloc(void **ptr, size_t size) {
     if (thread_local_config.is_interesting_region_) {
-        int device = TODO;
-        return TorchMemorySaver::instance().malloc(ptr, device, size, thread_local_config.current_tag_, thread_local_config.enable_cpu_backup_);
+        return TorchMemorySaver::instance().malloc(
+            ptr, CUDAUtils::cu_ctx_get_device(), size, thread_local_config.current_tag_, thread_local_config.enable_cpu_backup_);
     } else {
         return APIForwarder::call_real_cuda_malloc(ptr, size);
     }

@@ -333,7 +333,6 @@ void *tms_torch_malloc(ssize_t size, int device, cudaStream_t stream) {
 
 void tms_torch_free(void *ptr, ssize_t ssize, int device, cudaStream_t stream) {
     SIMPLE_CHECK(thread_local_config.is_interesting_region_, "only support interesting region");
-    // TODO handle `device`?
     TorchMemorySaver::instance().free(ptr);
 }
 }

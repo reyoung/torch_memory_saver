@@ -25,6 +25,11 @@ def test_cpu_backup(hook_mode):
     _test_core(cpu_backup.run, hook_mode=hook_mode)
 
 
+@pytest.mark.parametrize("hook_mode", _HOOK_MODES)
+def test_rl_example(hook_mode):
+    _test_core(rl_example.run, hook_mode=hook_mode)
+
+
 def _test_core(fn, hook_mode):
     ctx = torch_memory_saver.configure_subprocess() if hook_mode == "preload" else nullcontext()
     with ctx:

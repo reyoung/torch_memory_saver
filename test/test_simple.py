@@ -58,4 +58,4 @@ def _test_simple_inner():
 def test_simple():
     # TODO only configure for mode=preload
     with configure_subprocess():
-        run_in_subprocess(_test_simple_inner)
+        run_in_subprocess(_test_simple_inner, exit_without_cleanup=True)

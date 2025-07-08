@@ -13,10 +13,14 @@ def get_and_print_gpu_memory(message, gpu_id=0):
     return mem
 
 
-def run_in_subprocess(fn, **kwargs):
+def run_in_subprocess(fn, exit_without_cleanup: bool):
     ctx = multiprocessing.get_context('spawn')
     output_queue = ctx.Queue()
-    proc = ctx.Process(target=_subprocess_fn_wrapper, args=(fn, output_queue,), kwargs=kwargs)
+    proc = ctx.Process(
+        target=_subprocess_fn_wrapper,
+        args=(fn, output_queue,),
+        kwargs=dict(exit_without_cleanup=exit_without_cleanup),
+    )
     proc.start()
     proc.join()
     success = output_queue.get()

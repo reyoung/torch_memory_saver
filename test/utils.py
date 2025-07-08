@@ -1,18 +1,10 @@
 from contextlib import nullcontext
 
-import torch
 import logging
 import multiprocessing
 import sys
 import traceback
 import torch_memory_saver
-
-
-def get_and_print_gpu_memory(message, gpu_id=0):
-    """Print GPU memory usage with optional message"""
-    mem = torch.cuda.device_memory_used(gpu_id)
-    print(f"GPU {gpu_id} memory: {mem / 1024 ** 3:.2f} GB ({message})")
-    return mem
 
 
 def configure_tms_and_run_in_subprocess(fn, hook_mode):

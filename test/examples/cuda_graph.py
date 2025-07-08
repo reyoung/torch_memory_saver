@@ -54,7 +54,10 @@ def create_cuda_graph(fn: Callable):
     return g
 
 
-def run():
+def run(hook_mode: str):
+    torch_memory_saver.hook_mode = hook_mode
+    logging.basicConfig(level=logging.DEBUG, stream=sys.stdout)
+
     cache = KVCache()
     static_input = torch.zeros((5,), dtype=torch.float32, device='cuda')
     static_output = torch.zeros((5,), dtype=torch.float32, device='cuda')
@@ -115,4 +118,4 @@ def run():
 
 
 if __name__ == '__main__':
-    run()
+    run(hook_mode=sys.argv[1])

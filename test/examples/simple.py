@@ -61,4 +61,4 @@ def run(hook_mode: str):
 
 
 if __name__ == '__main__':
-    run(hook_mode='torch')
+    run(hook_mode=sys.argv[1])

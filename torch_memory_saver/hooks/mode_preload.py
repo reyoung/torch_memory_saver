@@ -14,11 +14,10 @@ def configure_subprocess():
 
 def _get_binary_path():
     dir_package = Path(__file__).parent
-    TODO_handle_so_postfix
     candidates = [
         p
         for d in [dir_package, dir_package.parent]
-        for p in d.glob("torch_memory_saver_cpp.*.so")
+        for p in d.glob("torch_memory_saver_hook_mode_preload.*.so")
     ]
     assert (
             len(candidates) == 1

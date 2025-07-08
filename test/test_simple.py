@@ -32,7 +32,9 @@ def _test_simple_inner():
     time.sleep(3)
 
     torch_memory_saver.resume()
-    get_and_print_gpu_memory("After resume")
+    mem_after_resume = get_and_print_gpu_memory("After resume")
+
+    assert mem_after_resume - mem_after_pause > 0.9 * 1024 ** 3
 
     new_address = pauseable_tensor.data_ptr()
     print(f"Pauseable tensor virtual address: 0x{new_address:x}")

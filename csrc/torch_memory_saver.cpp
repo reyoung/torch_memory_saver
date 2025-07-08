@@ -292,7 +292,7 @@ struct _ThreadLocalConfig {
 };
 static thread_local _ThreadLocalConfig thread_local_config;
 
-// ------------------------------------------------- entrypoints ------------------------------------------------
+// ------------------------------------------------- entrypoints :: hook ------------------------------------------------
 
 #ifdef TMS_HOOK_MODE_PRELOAD
 cudaError_t cudaMalloc(void **ptr, size_t size) {
@@ -313,9 +313,8 @@ cudaError_t cudaFree(void *ptr) {
 }
 #endif
 
-extern "C" {
-
 #ifndef TMS_HOOK_MODE_PRELOAD
+extern "C" {
 void *tms_torch_malloc(ssize_t size, int device, cudaStream_t stream) {
     SIMPLE_CHECK(thread_local_config.is_interesting_region_, "only support interesting region");
     void *ptr;
@@ -328,8 +327,12 @@ void tms_torch_free(void *ptr, ssize_t ssize, int device, cudaStream_t stream) {
     // TODO handle `device`?
     TorchMemorySaver::instance().free(ptr);
 }
+}
 #endif
 
+// ------------------------------------------------- entrypoints :: others ------------------------------------------------
+
+extern "C" {
 void tms_set_interesting_region(bool is_interesting_region) {
     thread_local_config.is_interesting_region_ = is_interesting_region;
 }

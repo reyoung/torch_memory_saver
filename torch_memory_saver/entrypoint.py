@@ -64,5 +64,5 @@ def _sanity_checks():
     TODO_move_check_to_real_init
     if "expandable_segments:True" in os.environ.get("PYTORCH_CUDA_ALLOC_CONF", ""):
         raise RuntimeError(
-            "TorchMemorySaver is disabled for the current process because expandable_segments is not supported yet (please create an issue if you need it)"
+            "TorchMemorySaver is disabled for the current process because expandable_segments is not supported yet."
         )

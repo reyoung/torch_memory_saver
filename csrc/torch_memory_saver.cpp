@@ -226,6 +226,7 @@ public:
             std::cout << "[torch_memory_saver.cpp] TorchMemorySaver.pause"
                       << " ptr=" << ptr << " metadata.size=" << metadata.size << " metadata.allocHandle="
                       << metadata.allocHandle << " tag=" << metadata.tag << " filter_tag=" << tag
+                      << " metadata.enableCpuBackup=" << metadata.enableCpuBackup
                       << std::endl;
 #endif
         }
@@ -261,6 +262,7 @@ public:
                       << " ptr=" << ptr << " metadata.size=" << metadata.size << " (old)metadata.allocHandle="
                       << metadata.allocHandle
                       << " (new)newAllocHandle=" << newAllocHandle << " tag=" << metadata.tag << " filter_tag=" << tag
+                      << " metadata.enableCpuBackup=" << metadata.enableCpuBackup
                       << std::endl;
 #endif
 

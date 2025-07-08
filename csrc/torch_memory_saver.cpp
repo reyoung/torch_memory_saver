@@ -195,6 +195,10 @@ public:
                 continue;
             }
 
+            if (metadata.enableCpuBackup) {
+                TODO;
+            }
+
             CURESULT_CHECK(cuMemUnmap((CUdeviceptr) ptr, metadata.size));
             CURESULT_CHECK(cuMemRelease(metadata.allocHandle));
 
@@ -224,6 +228,10 @@ public:
             CURESULT_CHECK(cuMemMap((CUdeviceptr) ptr, metadata.size, 0, newAllocHandle, 0));
 
             CUDAUtils::cu_mem_set_access(ptr, metadata.size, metadata.device);
+
+            if (metadata.enableCpuBackup) {
+                TODO;
+            }
 
 #ifdef TMS_DEBUG_LOG
             std::cout << "[torch_memory_saver.cpp] TorchMemorySaver.resume"

@@ -22,7 +22,7 @@ class HookUtilModePreload(HookUtilBase):
 @contextmanager
 def configure_subprocess():
     """Configure environment variables for subprocesses. Only needed for hook_mode=preload."""
-    with _change_env("LD_PRELOAD", str(get_binary_path_from_package())):
+    with _change_env("LD_PRELOAD", str(get_binary_path_from_package("torch_memory_saver_hook_mode_preload"))):
         yield
 
 

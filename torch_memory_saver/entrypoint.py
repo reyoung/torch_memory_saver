@@ -25,6 +25,21 @@ class TorchMemorySaver:
         with self._impl.region(tag=tag, enable_cpu_backup=enable_cpu_backup):
             yield
 
+    @contextmanager
+    def graph(
+            self,
+            cuda_graph, pool=None, stream=None, capture_error_mode='global',
+            tag: str = _TAG_DEFAULT, enable_cpu_backup: bool = False,
+    ):
+        """Similar to `torch.cuda.graph`, but ensures memory in it to be pauseable."""
+        self._ensure_initialized()
+        with self._impl.graph(
+            cuda_graph=cuda_graph,
+            pool=pool, stream=stream, capture_error_mode=capture_error_mode,
+            tag=tag, enable_cpu_backup=enable_cpu_backup,
+        ):
+            yield
+
     def pause(self, tag: Optional[str] = None):
         """Pause memory for specific tag or all memory if tag is None"""
         self._impl.pause(tag=tag)

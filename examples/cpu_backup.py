@@ -12,12 +12,14 @@ with torch_memory_saver.region(enable_cpu_backup=True):
 with torch_memory_saver.region(enable_cpu_backup=False):
     tensor_without_backup = torch.full((1_000_000,), 200, dtype=torch.uint8, device='cuda')
 
+print(f"{tensor_with_backup[:3]=} {tensor_without_backup[:3]=}")
 assert tensor_with_backup[:3].tolist() == [100, 100, 100]
 assert tensor_without_backup[:3].tolist() == [200, 200, 200]
 
 torch_memory_saver.pause()
 torch_memory_saver.resume()
 
+print(f"{tensor_with_backup[:3]=} {tensor_without_backup[:3]=}")
 assert tensor_with_backup[:3].tolist() == [100, 100, 100]
 assert tensor_without_backup[:3].tolist() != [200, 200, 200]
 

@@ -1,7 +1,7 @@
 import time
 import os
 
-from utils import run_in_subprocess, print_gpu_memory
+from utils import run_in_subprocess, get_and_print_gpu_memory
 
 
 def _test_simple_inner():
@@ -16,22 +16,23 @@ def _test_simple_inner():
 
     original_address = pauseable_tensor.data_ptr()
     print(f"Pauseable tensor virtual address: 0x{original_address:x}")
-
-    print_gpu_memory("Before pause")
-
     print(f'{normal_tensor=} {pauseable_tensor=}')
+
+    mem_before_pause = get_and_print_gpu_memory("Before pause")
 
     print('sleep...')
     time.sleep(3)
 
     torch_memory_saver.pause()
-    print_gpu_memory("After pause")
+    mem_after_pause = get_and_print_gpu_memory("After pause")
+
+    assert mem_before_pause - mem_after_pause > 0.9 * 1024 ** 3
 
     print('sleep...')
     time.sleep(3)
 
     torch_memory_saver.resume()
-    print_gpu_memory("After resume")
+    get_and_print_gpu_memory("After resume")
 
     new_address = pauseable_tensor.data_ptr()
     print(f"Pauseable tensor virtual address: 0x{new_address:x}")

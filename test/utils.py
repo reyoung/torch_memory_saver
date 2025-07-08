@@ -4,12 +4,18 @@ import sys
 import traceback
 import subprocess
 
+import torch.cuda
+
 
 def print_gpu_memory(message, gpu_id=0):
     """Print GPU memory usage with optional message"""
+    print(f"GPU {gpu_id} memory: {get_nvidia_smi_gpu_memory_gb():.2f} GB ({message})")
+
+
+def get_nvidia_smi_gpu_memory_gb(gpu_id=0):
     cmd = f"nvidia-smi --query-gpu=memory.used --format=csv,noheader,nounits --id={gpu_id}"
-    result = subprocess.check_output(cmd, shell=True, text=True).strip()
-    print(f"GPU {gpu_id} memory: {int(result) / 1024:.2f} GB ({message})")
+    result_mb = subprocess.check_output(cmd, shell=True, text=True).strip()
+    return int(result_mb) / 1024
 
 
 def run_in_subprocess(fn):

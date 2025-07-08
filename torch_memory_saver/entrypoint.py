@@ -18,7 +18,8 @@ class TorchMemorySaver:
     def region(self, tag: str = "default", enable_cpu_backup: bool = False):
         """Context manager for memory saving with optional tag"""
         self._ensure_initialized()
-        self._impl.region(tag=tag, enable_cpu_backup=enable_cpu_backup)
+        with self._impl.region(tag=tag, enable_cpu_backup=enable_cpu_backup):
+            yield
 
     def pause(self, tag: Optional[str] = None):
         """Pause memory for specific tag or all memory if tag is None"""

@@ -60,7 +60,7 @@ torch_memory_saver.resume("type1")
 
 ### Example of RL with CUDA Graph
 
-Please refer to `rl_examples.py` for details.
+Please refer to `rl_example.py` for details.
 
 ## Development
 
@@ -72,4 +72,10 @@ You can use this command for local testing:
 
 ```bash
 pytest /path/to/torch_memory_saver/test
+```
+
+Or this one to test a single case (e.g. the `simple` one here):
+
+```bash
+pytest /path/to/torch_memory_saver/test/test_examples.py::test_simple -s
 ```

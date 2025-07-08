@@ -44,7 +44,7 @@ class TorchMemorySaver:
 
 class _TorchMemorySaverImpl:
     def __init__(self):
-        hook_util: HookUtilBase = TODO
+        hook_util = HookUtilBase.create()
         self._binary_wrapper = BinaryWrapper(path_binary=hook_util.get_path_binary())
         self._mem_pool = torch.cuda.MemPool(allocator=hook_util.create_allocator())
         _sanity_checks()

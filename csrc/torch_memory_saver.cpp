@@ -130,9 +130,15 @@ namespace CUDAUtils {
     }
 
     static CUdevice cu_ctx_get_device() {
-        CUdevice device;
-        CURESULT_CHECK(cuCtxGetDevice(&device));
-        return device;
+        CUdevice ans;
+        CURESULT_CHECK(cuCtxGetDevice(&ans));
+        return ans;
+    }
+
+    static CUdevice cu_device_get(int device_ordinal) {
+        CUdevice ans;
+        CURESULT_CHECK(cuDeviceGet(&ans, device_ordinal));
+        return ans;
     }
 }
 
@@ -320,7 +326,8 @@ extern "C" {
 void *tms_torch_malloc(ssize_t size, int device, cudaStream_t stream) {
     SIMPLE_CHECK(thread_local_config.is_interesting_region_, "only support interesting region");
     void *ptr;
-    TorchMemorySaver::instance().malloc(&ptr, device, size, thread_local_config.current_tag_, thread_local_config.enable_cpu_backup_);
+    TorchMemorySaver::instance().malloc(
+        &ptr, CUDAUtils::cu_device_get(), size, thread_local_config.current_tag_, thread_local_config.enable_cpu_backup_);
     return ptr;
 }
 

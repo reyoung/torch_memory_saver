@@ -12,7 +12,7 @@ logger = logging.getLogger(__name__)
 
 
 @dataclass
-class _BinaryInfo:
+class BinaryWrapper:
     cdll: Optional[ctypes.CDLL]
 
     @property
@@ -20,25 +20,16 @@ class _BinaryInfo:
         return self.cdll is not None
 
     @staticmethod
-    def _setup_function_signatures(cdll):
-        """Define function signatures for the C library"""
-        cdll.tms_set_current_tag.argtypes = [ctypes.c_char_p]
-        cdll.tms_set_interesting_region.argtypes = [ctypes.c_bool]
-        cdll.tms_set_enable_cpu_backup.argtypes = [ctypes.c_bool]
-        cdll.tms_pause.argtypes = [ctypes.c_char_p]
-        cdll.tms_resume.argtypes = [ctypes.c_char_p]
-
-    @staticmethod
     def compute():
         env_ld_preload = os.environ.get("LD_PRELOAD", "")
         if "torch_memory_saver" in env_ld_preload:
             try:
                 cdll = ctypes.CDLL(env_ld_preload)
-                _BinaryInfo._setup_function_signatures(cdll)
-                return _BinaryInfo(cdll=cdll)
+                _setup_function_signatures(cdll)
+                return BinaryWrapper(cdll=cdll)
             except OSError as e:
                 logger.error(f"Failed to load CDLL from {env_ld_preload}: {e}")
-                return _BinaryInfo(cdll=None)
+                return BinaryWrapper(cdll=None)
         else:
             print(
                 f"TorchMemorySaver is disabled for the current process because invalid LD_PRELOAD. "
@@ -46,7 +37,16 @@ class _BinaryInfo:
                 f"or directly specify `LD_PRELOAD=/path/to/torch_memory_saver_cpp.some-postfix.so python your_script.py. "
                 f'(LD_PRELOAD="{env_ld_preload}" process_id={os.getpid()})'
             )
-            return _BinaryInfo(cdll=None)
+            return BinaryWrapper(cdll=None)
+
+
+def _setup_function_signatures(cdll):
+    """Define function signatures for the C library"""
+    cdll.tms_set_current_tag.argtypes = [ctypes.c_char_p]
+    cdll.tms_set_interesting_region.argtypes = [ctypes.c_bool]
+    cdll.tms_set_enable_cpu_backup.argtypes = [ctypes.c_bool]
+    cdll.tms_pause.argtypes = [ctypes.c_char_p]
+    cdll.tms_resume.argtypes = [ctypes.c_char_p]
 
 
 class _GlobalInfo:

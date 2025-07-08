@@ -14,10 +14,10 @@ _HOOK_MODES = ["preload", "torch"]
 
 @pytest.mark.parametrize("hook_mode", _HOOK_MODES)
 def test_simple(hook_mode):
-    configure_tms_and_run_in_subprocess(simple.run, hook_mode=hook_mode)
+    _configure_tms_and_run_in_subprocess(simple.run, hook_mode=hook_mode)
 
 
-def configure_tms_and_run_in_subprocess(fn, hook_mode):
+def _configure_tms_and_run_in_subprocess(fn, hook_mode):
     ctx = torch_memory_saver.configure_subprocess() if hook_mode == "preload" else nullcontext()
     with ctx:
         run_in_subprocess(_configure_tms_and_run_in_subprocess_fn_wrapper, fn_kwargs=dict(fn=fn, hook_mode=hook_mode))

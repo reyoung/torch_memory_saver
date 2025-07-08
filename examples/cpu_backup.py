@@ -17,6 +17,10 @@ assert tensor_with_backup[:3].tolist() == [100, 100, 100]
 assert tensor_without_backup[:3].tolist() == [200, 200, 200]
 
 torch_memory_saver.pause()
+
+# occupy some space
+tensor_unrelated = torch.full((2_000_000,), 300, dtype=torch.uint8, device='cuda')
+
 torch_memory_saver.resume()
 
 print(f"{tensor_with_backup[:3]=} {tensor_without_backup[:3]=}")

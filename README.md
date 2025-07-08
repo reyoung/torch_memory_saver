@@ -62,23 +62,14 @@ torch_memory_saver.resume("type1")
 
 Please refer to `rl_examples.py` for details.
 
-```bash
-pip install -e .
-cd examples
-bash run_rl_example.sh
-```
-
 ## Development
 
 ```bash
-pip install -e .
+make reinstall
 ```
 
-A `torch_memory_saver_cpp.abi3.so` will be built under `{your_workspace}/torch_memory_saver/` folder.
-
 You can use this command for local testing:
-```bash
-LD_PRELOAD={your_workspace}/torch_memory_saver/torch_memory_saver_cpp.abi3.so python examples/simple.py
 
-LD_PRELOAD={your_workspace}/torch_memory_saver/torch_memory_saver_cpp.abi3.so python examples/rl_with_cuda_graph.py
+```bash
+pytest /path/to/torch_memory_saver/test
 ```

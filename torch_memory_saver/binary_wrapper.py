@@ -13,11 +13,7 @@ logger = logging.getLogger(__name__)
 
 @dataclass
 class BinaryWrapper:
-    cdll: Optional[ctypes.CDLL]
-
-    @property
-    def enabled(self):
-        return self.cdll is not None
+    cdll: ctypes.CDLL
 
     @staticmethod
     def compute():

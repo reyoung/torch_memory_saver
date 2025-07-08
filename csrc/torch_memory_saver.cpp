@@ -117,18 +117,26 @@ namespace CUDAUtils {
 
 // ----------------------------------------------- primary class --------------------------------------------------
 
+// TODO unify variable cases etc
 struct _AllocationMetadata {
     size_t size;
     CUdevice device;
     CUmemGenericAllocationHandle allocHandle;
     std::string tag;
+    bool enableCpuBackup;
+    void* cpuBackup;
+};
+
+enum CopyDirection {
+    DEVICE_TO_HOST,
+    HOST_TO_DEVICE,
 };
 
 class TorchMemorySaver {
 public:
     TorchMemorySaver() {}
 
-    cudaError_t malloc(void **ptr, size_t size, const std::string& tag) {
+    cudaError_t malloc(void **ptr, size_t size, const std::string& tag, const bool enable_cpu_backup) {
         CUdevice device;
         CURESULT_CHECK(cuCtxGetDevice(&device));
 
@@ -140,7 +148,7 @@ public:
 
         {
             const std::lock_guard<std::mutex> lock(allocator_metadata_mutex_);
-            allocation_metadata_.emplace(*ptr, _AllocationMetadata{size, device, allocHandle, tag});
+            allocation_metadata_.emplace(*ptr, _AllocationMetadata{size, device, allocHandle, tag, enableCpuBackup, nullptr});
         }
 
 #ifdef TMS_DEBUG_LOG
@@ -246,6 +254,7 @@ private:
 struct _ThreadLocalConfig {
     bool is_interesting_region_ = false;
     std::string current_tag_ = "default";
+    bool enable_cpu_backup_ = false;
 };
 static thread_local _ThreadLocalConfig thread_local_config;
 
@@ -253,7 +262,7 @@ static thread_local _ThreadLocalConfig thread_local_config;
 
 cudaError_t cudaMalloc(void **ptr, size_t size) {
     if (thread_local_config.is_interesting_region_) {
-        return TorchMemorySaver::instance().malloc(ptr, size, thread_local_config.current_tag_);
+        return TorchMemorySaver::instance().malloc(ptr, size, thread_local_config.current_tag_, thread_local_config.enable_cpu_backup_);
     } else {
         return APIForwarder::call_real_cuda_malloc(ptr, size);
     }
@@ -275,6 +284,10 @@ void tms_set_interesting_region(bool is_interesting_region) {
 void tms_set_current_tag(const char* tag) {
     SIMPLE_CHECK(tag != nullptr, "tag should not be null");
     RegionManager::set_current_tag(std::string(tag));
+}
+
+void tms_set_enable_cpu_backup(bool enable_cpu_backup) {
+    thread_local_config.enable_cpu_backup_ = enable_cpu_backup;
 }
 
 void tms_pause(const char* tag) {

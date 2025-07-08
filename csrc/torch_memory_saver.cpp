@@ -161,7 +161,7 @@ public:
 
         {
             const std::lock_guard<std::mutex> lock(allocator_metadata_mutex_);
-            allocation_metadata_.emplace(*ptr, _AllocationMetadata{size, device, allocHandle, tag, enableCpuBackup, nullptr});
+            allocation_metadata_.emplace(*ptr, _AllocationMetadata{size, device, allocHandle, tag, enable_cpu_backup, nullptr});
         }
 
 #ifdef TMS_DEBUG_LOG

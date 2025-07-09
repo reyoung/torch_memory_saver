@@ -75,6 +75,12 @@ The mode can be chosen by:
 torch_memory_saver.hook_mode = "torch"
 ```
 
+### Release Memory in CUDA Graph
+
+Not only does torch_memory_saver make tensors compatible with CUDA graph, but we can also release the memory held by CUDA graph (i.e. the intermediate tensors).
+
+API: Change `torch.cuda.graph(...)` to `torch_memory_saver.cuda_graph(...)`
+
 ### Example of RL with CUDA Graph
 
 Please refer to `rl_example.py` for details.

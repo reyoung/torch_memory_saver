@@ -66,6 +66,10 @@ void tms_set_interesting_region(bool is_interesting_region) {
     thread_local_config.is_interesting_region_ = is_interesting_region;
 }
 
+bool tms_get_interesting_region() {
+    return thread_local_config.is_interesting_region_;
+}
+
 void tms_set_current_tag(const char* tag) {
     SIMPLE_CHECK(tag != nullptr, "tag should not be null");
     thread_local_config.current_tag_ = tag;

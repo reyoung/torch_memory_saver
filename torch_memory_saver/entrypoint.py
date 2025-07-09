@@ -40,6 +40,11 @@ class TorchMemorySaver:
         ):
             yield
 
+    @contextmanager
+    def disable(self):
+        with self._impl.disable():
+            yield
+
     def pause(self, tag: Optional[str] = None):
         """Pause memory for specific tag or all memory if tag is None"""
         self._impl.pause(tag=tag)
@@ -99,6 +104,15 @@ class _TorchMemorySaverImpl:
         finally:
             assert self._binary_wrapper.cdll.tms_get_interesting_region()
             self._binary_wrapper.set_config(tag=_TAG_DEFAULT, interesting_region=False, enable_cpu_backup=False)
+
+    @contextmanager
+    def disable(self):
+        old_is_interesting_region = self._binary_wrapper.cdll.tms_get_interesting_region()
+        self._binary_wrapper.cdll.tms_set_interesting_region(False)
+        try:
+            yield
+        finally:
+            self._binary_wrapper.cdll.tms_set_interesting_region(old_is_interesting_region)
 
     def pause(self, tag: Optional[str]):
         tag_bytes = tag.encode("utf-8") if tag else None

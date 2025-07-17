@@ -64,14 +64,10 @@ void TorchMemorySaver::pause(const std::string& tag) {
             continue;
         }
 
-        // Check if already paused
         if (metadata.state == AllocationState::PAUSED) {
-#ifdef TMS_DEBUG_LOG
-            std::cout << "[torch_memory_saver.cpp] TorchMemorySaver.pause SKIPPED (already paused)"
-                      << " ptr=" << ptr << " tag=" << metadata.tag << " filter_tag=" << tag
-                      << std::endl;
-#endif
-            continue;  // Skip if already paused
+            std::string error_msg = "Cannot pause allocation that is already paused. "
+                                  "Tag: " + metadata.tag + ", Ptr: " + std::to_string((uintptr_t)ptr);
+            throw std::runtime_error(error_msg);
         }
 
         if (metadata.enable_cpu_backup) {
@@ -110,14 +106,10 @@ void TorchMemorySaver::resume(const std::string& tag) {
             continue;
         }
 
-        // Check if already active
         if (metadata.state == AllocationState::ACTIVE) {
-#ifdef TMS_DEBUG_LOG
-            std::cout << "[torch_memory_saver.cpp] TorchMemorySaver.resume SKIPPED (already active)"
-                      << " ptr=" << ptr << " tag=" << metadata.tag << " filter_tag=" << tag
-                      << std::endl;
-#endif
-            continue;  // Skip if already resumed
+            std::string error_msg = "Cannot resume allocation that is already active. "
+                                  "Tag: " + metadata.tag + ", Ptr: " + std::to_string((uintptr_t)ptr);
+            throw std::runtime_error(error_msg);
         }
 
         CUmemGenericAllocationHandle newAllocHandle;
@@ -134,7 +126,6 @@ void TorchMemorySaver::resume(const std::string& tag) {
             // maybe we can free host memory if needed (currently keep it there to reduce re-alloc time)
         }
 
-        // Update state to resumed and store new alloc handle
         metadata.state = AllocationState::ACTIVE;
         metadata.allocHandle = newAllocHandle;
 

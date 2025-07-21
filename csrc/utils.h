@@ -1,7 +1,7 @@
 #pragma once
 #include <iostream>
-#include <cuda_runtime_api.h>
-#include <cuda.h>
+#include <vector> 
+#include "macro.h"
 
 //#define TMS_DEBUG_LOG
 
@@ -52,7 +52,121 @@
     } \
   } while (false)
 
+
 namespace CUDAUtils {
+
+  #ifdef USE_HIP
+    // hipMemCreate currently has issue in rocm-6.3.4. After it is fixed in rocm-7.0, we can use the same way to implement torch_memory_saver as CUDA side.
+    // Current, we based on the chuck-wise method to implement it.
+    //static void cu_mem_create_and_map(hipDevice_t device, 
+    static void cu_mem_create_and_map(hipDevice_t device, 
+                                      size_t size, 
+                                      void* d_mem,
+                                      std::vector<hipMemGenericAllocationHandle_t>& allocHandles,
+                                      std::vector<size_t>& chunk_sizes) {
+      hipMemAllocationProp prop = {};
+      prop.type = hipMemAllocationTypePinned;
+      prop.location.type = hipMemLocationTypeDevice;
+      prop.location.id = device;
+
+      // Get granularity
+      size_t granularity;
+      CURESULT_CHECK(hipMemGetAllocationGranularity(&granularity, &prop,
+                  hipMemAllocationGranularityMinimum));
+
+      // Make sure chunk size is aligned with hardware granularity
+      size_t aligned_chunk_size = ((MEMCREATE_CHUNK_SIZE + granularity - 1) / granularity) * granularity;
+      size_t num_chunks = (size + aligned_chunk_size - 1) / aligned_chunk_size;
+
+      allocHandles.resize(num_chunks);
+      chunk_sizes.resize(num_chunks);
+
+      // Calculate chunk sizes
+      for (size_t i = 0; i < num_chunks; ++i) {
+        chunk_sizes[i] = MIN(size - i * aligned_chunk_size, aligned_chunk_size);
+          #ifdef TMS_DEBUG_LOG
+            std::cout << "[torch_memory_saver.cpp] chunk_sizes[" << i << "] = " << chunk_sizes[i] << std::endl;
+          #endif
+      }
+
+      // Create memory handles for each chunk
+      for (size_t i = 0; i < num_chunks; ++i) {
+        CURESULT_CHECK(hipMemCreate(&allocHandles[i], chunk_sizes[i], &prop, 0));
+          #ifdef TMS_DEBUG_LOG
+            std::cout << "[torch_memory_saver.cpp] allocHandles[" << i << "] = " << allocHandles[i] << std::endl;
+          #endif
+      }
+
+      // Map each chunk
+      size_t allocated_size = 0;
+      for (size_t i = 0; i < num_chunks; ++i) {
+        void* map_addr = (void*)((uintptr_t)d_mem + allocated_size);
+        CURESULT_CHECK(hipMemMap((hipDeviceptr_t)map_addr, chunk_sizes[i], 0, allocHandles[i], 0));
+        allocated_size += chunk_sizes[i];
+          #ifdef TMS_DEBUG_LOG
+            std::cout << "[torch_memory_saver.cpp] mapped chunk " << i << " at offset " << allocated_size - chunk_sizes[i] << std::endl;
+          #endif
+      }
+
+      // Set access permissions
+      hipMemAccessDesc accessDesc = {};
+      accessDesc.location.type = hipMemLocationTypeDevice;
+      accessDesc.location.id = device;
+      accessDesc.flags = hipMemAccessFlagsProtReadWrite;
+      CURESULT_CHECK(hipMemSetAccess(d_mem, size, &accessDesc, 1));
+    }
+
+
+
+    static void cu_mem_unmap_and_release(hipDevice_t device,
+                                        size_t size,
+                                        hipDeviceptr_t d_mem,
+                                        const std::vector<hipMemGenericAllocationHandle_t>& allocHandles,
+                                        const std::vector<size_t>& chunk_sizes) {
+      // Unmap each chunk
+      size_t allocated_size = 0;
+      for (size_t i = 0; i < allocHandles.size(); ++i) {
+        void* map_addr = (void*)((uintptr_t)d_mem + allocated_size);
+        CURESULT_CHECK(hipMemUnmap((hipDeviceptr_t)map_addr, chunk_sizes[i]));
+        allocated_size += chunk_sizes[i];
+          #ifdef TMS_DEBUG_LOG
+            std::cout << "[torch_memory_saver.cpp] unmapped chunk " << i << " at offset " << allocated_size - chunk_sizes[i] << std::endl;
+          #endif
+      }
+
+      // Release each handle
+      for (size_t i = 0; i < allocHandles.size(); ++i) {
+        CURESULT_CHECK(hipMemRelease(allocHandles[i]));
+          #ifdef TMS_DEBUG_LOG
+            std::cout << "[torch_memory_saver.cpp] released allocHandles[" << i << "]" << std::endl;
+          #endif
+      }
+    }
+
+    static size_t cu_mem_get_granularity(hipDevice_t device) {
+      hipMemAllocationProp prop = {};
+      prop.type = hipMemAllocationTypePinned;
+      prop.location.type = hipMemLocationTypeDevice;
+      prop.location.id = device;
+
+      size_t granularity;
+      CURESULT_CHECK(hipMemGetAllocationGranularity(&granularity, &prop, hipMemAllocationGranularityMinimum));
+      return granularity;
+    }
+
+    static CUdevice cu_ctx_get_device() {
+      CUdevice ans;
+      CURESULT_CHECK(hipCtxGetDevice(&ans));
+      return ans;
+    }
+
+    static CUdevice cu_device_get(int device_ordinal) {
+      CUdevice ans;
+      CURESULT_CHECK(hipDeviceGet(&ans, device_ordinal));
+      return ans;
+    }
+
+  #else
     static void cu_mem_create(CUmemGenericAllocationHandle *alloc_handle, size_t size, CUdevice device) {
         CUmemAllocationProp prop = {};
         prop.type = CU_MEM_ALLOCATION_TYPE_PINNED;
@@ -80,4 +194,6 @@ namespace CUDAUtils {
         CURESULT_CHECK(cuDeviceGet(&ans, device_ordinal));
         return ans;
     }
+
+  #endif
 }

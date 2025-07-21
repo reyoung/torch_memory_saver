@@ -5,15 +5,24 @@
 #include <mutex>
 #include <string>
 #include "utils.h"
+#include "macro.h"
 
 struct AllocationMetadata {
     size_t size;
     CUdevice device;
-    CUmemGenericAllocationHandle allocHandle;
     std::string tag;
     bool enable_cpu_backup;
     void* cpu_backup;
+
+    #ifdef USE_HIP
+        size_t aligned_size;
+        std::vector<hipMemGenericAllocationHandle_t> allocHandles;
+        std::vector<size_t> chunk_sizes;
+    #else
+        CUmemGenericAllocationHandle allocHandle;
+    #endif
 };
+
 
 class TorchMemorySaver {
 public:

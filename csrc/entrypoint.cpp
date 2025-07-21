@@ -1,8 +1,6 @@
 #include "utils.h"
 #include "core.h"
 #include "api_forwarder.h"
-#include <stdexcept>
-#include <string>
 
 // ----------------------------------------------- threadlocal configs --------------------------------------------------
 
@@ -12,9 +10,6 @@ struct ThreadLocalConfig {
     bool enable_cpu_backup_ = false;
 };
 static thread_local ThreadLocalConfig thread_local_config;
-
-static std::string last_error_message;
-static std::mutex error_mutex;
 
 // ------------------------------------------------- entrypoints :: hook ------------------------------------------------
 
@@ -85,31 +80,12 @@ void tms_set_enable_cpu_backup(bool enable_cpu_backup) {
 }
 
 int tms_pause(const char* tag) {
-    try {
-        std::string tag_str = (tag != nullptr) ? std::string(tag) : "";
-        TorchMemorySaver::instance().pause(tag_str);
-        return 0;  // Success
-    } catch (const std::exception& e) {
-        const std::lock_guard<std::mutex> lock(error_mutex);
-        last_error_message = e.what();
-        return -1;  // Error
-    }
+    std::string tag_str = (tag != nullptr) ? std::string(tag) : "";
+    return TorchMemorySaver::instance().pause(tag_str);
 }
 
 int tms_resume(const char* tag) {
-    try {
-        std::string tag_str = (tag != nullptr) ? std::string(tag) : "";
-        TorchMemorySaver::instance().resume(tag_str);
-        return 0;  // Success
-    } catch (const std::exception& e) {
-        const std::lock_guard<std::mutex> lock(error_mutex);
-        last_error_message = e.what();
-        return -1;  // Error
-    }
-}
-
-const char* tms_get_last_error() {
-    const std::lock_guard<std::mutex> lock(error_mutex);
-    return last_error_message.c_str();
+    std::string tag_str = (tag != nullptr) ? std::string(tag) : "";
+    return TorchMemorySaver::instance().resume(tag_str);
 }
 }

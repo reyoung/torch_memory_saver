@@ -11,39 +11,89 @@ TorchMemorySaver &TorchMemorySaver::instance() {
 
 cudaError_t TorchMemorySaver::malloc(void **ptr, CUdevice device, size_t size, const std::string& tag, const bool enable_cpu_backup) {
 
-    #ifdef USE_HIP
+    #if defined(USE_ROCM)
         // hipDevice_t device;
-        // CURESULT_CHECK(hipCtxGetDevice(&device));
+        CURESULT_CHECK(hipCtxGetDevice(&device));
 
-        // Get granularity and calculate aligned size
-        size_t granularity = CUDAUtils::cu_mem_get_granularity(device);
-        size_t aligned_size = (size + granularity - 1) & ~(granularity - 1);
+        // // Get granularity and calculate aligned size
+        // size_t granularity = CUDAUtils::cu_mem_get_granularity(device);
+        // size_t aligned_size = (size + granularity - 1) & ~(granularity - 1);
 
-        // Reserve aligned memory address, rocm will check granularity
-        CURESULT_CHECK(hipMemAddressReserve((hipDeviceptr_t *)ptr, aligned_size, granularity, 0, 0));
+        // //// Reserve aligned memory address, rocm will check granularity
+        // CURESULT_CHECK(hipMemAddressReserve((hipDeviceptr_t *)ptr, aligned_size, granularity, 0, 0));
+
+        hipMemAllocationProp prop = {};
+        prop.type = hipMemAllocationTypePinned;
+        prop.location.type = hipMemLocationTypeDevice;
+        prop.location.id = device;
+        prop.allocFlags.compressionType = 0x0;
+
+        size_t granularity;
+        CURESULT_CHECK(hipMemGetAllocationGranularity(&granularity, &prop,
+                                               hipMemAllocationGranularityMinimum));
+        size_t aligned_size = ((size + granularity - 1) / granularity) * granularity;
+        aligned_size = (aligned_size + MEMCREATE_CHUNK_SIZE - 1) / MEMCREATE_CHUNK_SIZE * MEMCREATE_CHUNK_SIZE;
+
+        assert(MEMCREATE_CHUNK_SIZE % granularity == 0);
+        assert(aligned_size % MEMCREATE_CHUNK_SIZE == 0);
+        assert(aligned_size % granularity == 0);
+
 
         // Create allocation metadata
         AllocationMetadata metadata;
         metadata.size = size;
         metadata.aligned_size = aligned_size;
         metadata.device = device;
+        //// Not sure
+        metadata.tag = tag;
+        metadata.enable_cpu_backup = enable_cpu_backup;
+        metadata.cpu_backup = nullptr;
+        ////
+
+        // Get global device ID using our utility function
+        int global_device_id = DeviceUtils::get_global_device_id(device);
+
+        // rewrite numa node 
+        uint64_t node_id = 0;
+        if (global_device_id > 3) {
+            node_id = 1;
+        }
+
+        #ifdef TMS_DEBUG_LOG
+            std::cout << "[torch_memory_saver.cpp] TorchMemorySaver.cuda_malloc "
+                    << " ptr=" << ptr << " *ptr=" << *ptr << " size=" << size
+                    << " granularity=" << granularity
+                    << " aligned_size=" << aligned_size
+                    << " node_id=" << node_id
+                    << " device=" << device
+                    << " global_device_id=" << global_device_id
+                    << std::endl;
+        #endif
+
+        hipDeviceptr_t d_mem;
+        // Reserve aligned memory address, rocm will check granularity
+        CURESULT_CHECK(hipMemAddressReserve(&d_mem, aligned_size, granularity, 0, node_id));
+        *ptr = (void*)d_mem;
 
         // Create and map chunks
-        CUDAUtils::cu_mem_create_and_map(device, size, (hipDeviceptr_t)*ptr, 
+        // CUDAUtils::cu_mem_create_and_map(device, size, (hipDeviceptr_t)*ptr, 
+        CUDAUtils::cu_mem_create_and_map(device, aligned_size, (hipDeviceptr_t)*ptr, 
                                         metadata.allocHandles, metadata.chunk_sizes);
         size_t num_chunks = metadata.allocHandles.size();
         {
             const std::lock_guard<std::mutex> lock(allocator_metadata_mutex_);
             allocation_metadata_.emplace(*ptr, std::move(metadata));
+            // allocation_metadata_.emplace(*ptr, AllocationMetadata{size, device, allocHandle, tag, enable_cpu_backup, nullptr});
         }
         #ifdef TMS_DEBUG_LOG
             std::cout << "[torch_memory_saver.cpp] TorchMemorySaver.cuda_malloc "
                     << " ptr=" << ptr << " *ptr=" << *ptr << " size=" << size
+                    << " metadata.aligned_size=" << metadata.aligned_size
                     << " num_chunks=" << num_chunks
                     << std::endl;
         #endif
 
-    #else
+    #elif defined(USE_CUDA)
         CUmemGenericAllocationHandle allocHandle;
         CUDAUtils::cu_mem_create(&allocHandle, size, device);
         CURESULT_CHECK(cuMemAddressReserve((CUdeviceptr *) ptr, size, 0, 0, 0));
@@ -59,6 +109,8 @@ cudaError_t TorchMemorySaver::malloc(void **ptr, CUdevice device, size_t size, c
                     << " allocHandle=" << allocHandle << " tag=" << tag
                     << std::endl;
         #endif
+    #else
+        #error "USE_PLATFORM is not set"
     #endif
     return cudaSuccess;
 }
@@ -68,7 +120,7 @@ cudaError_t TorchMemorySaver::malloc(void **ptr, CUdevice device, size_t size, c
 
 cudaError_t TorchMemorySaver::free(void *ptr) {
 
-    #ifdef USE_HIP
+    #if defined(USE_ROCM)
         AllocationMetadata metadata;
         {
             const std::lock_guard<std::mutex> lock(allocator_metadata_mutex_);
@@ -87,10 +139,11 @@ cudaError_t TorchMemorySaver::free(void *ptr) {
         #ifdef TMS_DEBUG_LOG
             std::cout << "[torch_memory_saver.cpp] TorchMemorySaver.cuda_free "
                     << " ptr=" << ptr << " metadata.size=" << metadata.size
+                    << " metadata.aligned_size=" << metadata.aligned_size
                     << " num_chunks=" << metadata.allocHandles.size()
                     << std::endl;
         #endif
-    #else
+    #elif defined(USE_CUDA)
         AllocationMetadata metadata;
         {
             const std::lock_guard <std::mutex> lock(allocator_metadata_mutex_);
@@ -109,6 +162,8 @@ cudaError_t TorchMemorySaver::free(void *ptr) {
                     << " metadata.allocHandle=" << metadata.allocHandle << " tag=" << metadata.tag
                     << std::endl;
         #endif
+    #else
+        #error "USE_PLATFORM is not set"
     #endif
     return cudaSuccess;
 }
@@ -116,7 +171,7 @@ cudaError_t TorchMemorySaver::free(void *ptr) {
 void TorchMemorySaver::pause(const std::string& tag) {
     const std::lock_guard <std::mutex> lock(allocator_metadata_mutex_);
 
-    #ifdef USE_HIP
+    #if defined(USE_ROCM)
         for (auto it = allocation_metadata_.begin(); it != allocation_metadata_.end(); ++it) {
             void *ptr = it->first;
             AllocationMetadata &metadata = it->second;
@@ -124,19 +179,32 @@ void TorchMemorySaver::pause(const std::string& tag) {
             if (!tag.empty() && metadata.tag != tag) {
                 continue;
             }
+            
+            // Copy CUDA's code supporting cpu_backup to here
+            if (metadata.enable_cpu_backup) {
+                if (nullptr == metadata.cpu_backup) {
+                    CUDA_ERROR_CHECK(hipMallocHost(&metadata.cpu_backup, metadata.aligned_size));
+                }
+                SIMPLE_CHECK(metadata.cpu_backup != nullptr, "cpu_backup should not be nullptr");
+                // TODO may use cudaMemcpyAsync if needed
+                CUDA_ERROR_CHECK(cudaMemcpy(metadata.cpu_backup, ptr, metadata.aligned_size, hipMemcpyDeviceToHost));
+            }
+            //
 
             // Unmap and release chunks (but keep metadata for resume)
-            CUDAUtils::cu_mem_unmap_and_release(metadata.device, metadata.size,
+            // CUDAUtils::cu_mem_unmap_and_release(metadata.device, metadata.size,
+            CUDAUtils::cu_mem_unmap_and_release(metadata.device, metadata.aligned_size,
                                                 (hipDeviceptr_t)ptr, metadata.allocHandles, metadata.chunk_sizes);
 
             #ifdef TMS_DEBUG_LOG
                 std::cout << "[torch_memory_saver.cpp] TorchMemorySaver.pause"
                         << " ptr=" << ptr << " metadata.size=" << metadata.size 
+                        << " metadata.aligned_size=" << metadata.aligned_size
                         << " num_chunks=" << metadata.allocHandles.size()
                         << std::endl;
             #endif
         }
-    #else
+    #elif defined(USE_CUDA)
         for (auto it = allocation_metadata_.begin(); it != allocation_metadata_.end(); ++it) {
             void *ptr = it->first;
             AllocationMetadata& metadata = it->second;
@@ -165,13 +233,15 @@ void TorchMemorySaver::pause(const std::string& tag) {
                         << std::endl;
             #endif
         }
+    #else
+        #error "USE_PLATFORM is not set"
     #endif
 }
 
 void TorchMemorySaver::resume(const std::string& tag) {
     const std::lock_guard <std::mutex> lock(allocator_metadata_mutex_);
 
-    #ifdef USE_HIP
+    #if defined(USE_ROCM)
         for (auto it = allocation_metadata_.begin(); it != allocation_metadata_.end(); ++it) {
             void *ptr = it->first;
             AllocationMetadata &metadata = it->second;
@@ -181,18 +251,20 @@ void TorchMemorySaver::resume(const std::string& tag) {
             }
 
             // Create new handles and map chunks
-            CUDAUtils::cu_mem_create_and_map(metadata.device, metadata.size,
+            // CUDAUtils::cu_mem_create_and_map(metadata.device, metadata.size,
+            CUDAUtils::cu_mem_create_and_map(metadata.device, metadata.aligned_size,
                                             (hipDeviceptr_t)ptr, metadata.allocHandles, metadata.chunk_sizes);
 
             #ifdef TMS_DEBUG_LOG
                     std::cout << "[torch_memory_saver.cpp] TorchMemorySaver.resume"
                             << " ptr=" << ptr << " metadata.size=" << metadata.size
+                            << " metadata.aligned_size=" << metadata.aligned_size
                             << " num_chunks=" << metadata.allocHandles.size()
                             << std::endl;
             #endif
         }
 
-    #else
+    #elif defined(USE_CUDA)
         for (auto it = allocation_metadata_.begin(); it != allocation_metadata_.end(); ++it) {
             void *ptr = it->first;
             AllocationMetadata &metadata = it->second;
@@ -226,5 +298,7 @@ void TorchMemorySaver::resume(const std::string& tag) {
 
             metadata.allocHandle = newAllocHandle;
         }
+    #else
+        #error "USE_PLATFORM is not set"
     #endif
 }

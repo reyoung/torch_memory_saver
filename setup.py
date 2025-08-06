@@ -107,7 +107,7 @@ if platform == "hip":
             library_dirs=library_dirs,
             libraries=['amdhip64', 'dl'],
             define_macros=[
-                ('Py_LIMITED_API', '0x03090000'),('USE_HIP', '1'),
+                ('Py_LIMITED_API', '0x03090000'),('USE_ROCM', '1'),
                 *extra_macros,
             ],
             py_limited_api=True,

@@ -89,5 +89,15 @@ bool get_bool_env_var(const char* name) {
     }
 
     std::string env_str(env_cstr);
-    return env_str == "1" || env_str == "true" || env_str == "TRUE" || env_str == "yes" || env_str == "YES";
+    if (env_str == "1" || env_str == "true" || env_str == "TRUE" || env_str == "yes" || env_str == "YES") {
+        return true;
+    }
+    if (env_str == "0" || env_str == "false" || env_str == "FALSE" || env_str == "no" || env_str == "NO") {
+        return false;
+    }
+
+    std::cerr << "[torch_memory_saver.cpp] Unsupported environment varialbe value "
+              << " name=" << name << " value=" << env_str
+              << std::endl;
+    exit(1);
 }

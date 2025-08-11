@@ -16,6 +16,10 @@ public:
         return is_interesting_region_.value();
     }
 
+    void set_interesting_region(bool value) {
+        is_interesting_region_ = value;
+    }
+
 private:
     std::optional<bool> is_interesting_region_;
 };
@@ -73,7 +77,7 @@ void tms_torch_free(void *ptr, ssize_t ssize, int device, cudaStream_t stream) {
 
 extern "C" {
 void tms_set_interesting_region(bool is_interesting_region) {
-    thread_local_config.set_is_interesting_region(is_interesting_region);
+    thread_local_config.set_interesting_region(is_interesting_region);
 }
 
 bool tms_get_interesting_region() {

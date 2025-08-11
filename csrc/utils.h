@@ -83,11 +83,11 @@ namespace CUDAUtils {
 }
 
 bool get_bool_env_var(const char* name) {
-    const char* env = std::getenv(name);
-    if (env == nullptr) {
+    const char* env_cstr = std::getenv(name);
+    if (env_cstr == nullptr) {
         return false;
     }
 
-    std::string val(env);
-    return val == "1" || val == "true" || val == "TRUE" || val == "yes" || val == "YES";
+    std::string env_str(env_cstr);
+    return env_str == "1" || env_str == "true" || env_str == "TRUE" || env_str == "yes" || env_str == "YES";
 }

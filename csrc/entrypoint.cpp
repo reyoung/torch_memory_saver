@@ -11,7 +11,7 @@ public:
 
     bool is_interesting_region() {
         if (!is_interesting_region_.has_value()) {
-            is_interesting_region_ = get_bool_env_var("TMS_INIT_INTERESTING_REGION");
+            is_interesting_region_ = get_bool_env_var("TMS_INIT_ENABLE");
         }
         return is_interesting_region_.value();
     }

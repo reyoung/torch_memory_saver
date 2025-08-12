@@ -79,12 +79,12 @@ class _TorchMemorySaverImpl:
         self._hook_mode = hook_mode
         self._hook_util = HookUtilBase.create(hook_mode=hook_mode)
         self._binary_wrapper = BinaryWrapper(path_binary=self._hook_util.get_path_binary())
-        self._mem_pool = torch.cuda.MemPool(allocator=self._hook_util.get_allocator())
+        self._primary_mem_pool = torch.cuda.MemPool(allocator=self._hook_util.get_allocator())
         _sanity_checks()
 
     @contextmanager
     def region(self, tag: str, enable_cpu_backup: bool):
-        with torch.cuda.use_mem_pool(self._mem_pool):
+        with torch.cuda.use_mem_pool(self._primary_mem_pool):
             with self._with_region_config(tag=tag, enable_cpu_backup=enable_cpu_backup):
                 yield
 

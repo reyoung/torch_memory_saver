@@ -6,11 +6,19 @@
 #include <string>
 #include "utils.h"
 
+enum class AllocationState {
+    // Memory is mapped and accessible
+    ACTIVE,
+    // Memory is unmapped and inaccessible
+    PAUSED
+};
+
 struct AllocationMetadata {
     size_t size;
     CUdevice device;
     CUmemGenericAllocationHandle allocHandle;
     std::string tag;
+    AllocationState state;
     bool enable_cpu_backup;
     void* cpu_backup;
 };

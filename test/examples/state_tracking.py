@@ -54,10 +54,3 @@ def state_tracking_multi_tag(hook_mode: str):
     # Resume default tag (should throw error)
     with pytest.raises(RuntimeError, match="Cannot resume allocation that is already active"):
         tms.resume()
-
-
-if __name__ == "__main__":
-    hook_mode = "preload" if len(sys.argv) < 2 else sys.argv[1]
-    ctx = torch_memory_saver.configure_subprocess() if hook_mode == "preload" else nullcontext()
-    with ctx:
-        state_tracking_basic(hook_mode)

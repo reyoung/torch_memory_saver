@@ -106,17 +106,24 @@ class _TorchMemorySaverImpl:
             self._binary_wrapper.set_config(tag=_TAG_DEFAULT, interesting_region=False, enable_cpu_backup=False)
 
     @contextmanager
-    def disable(self):
+    def disable(self, dispose_mem_pool_after_use: bool = True):
+        assert dispose_mem_pool_after_use, "Only dispose_mem_pool_after_use=true is supported now"
+
         if not self._binary_wrapper.cdll.tms_get_interesting_region():
             print("WARN: Execute TorchMemorySaver.disable while it is already disabled, thus it is no-op")
             yield
             return
 
-        self._binary_wrapper.cdll.tms_set_interesting_region(False)
-        try:
-            yield
-        finally:
-            self._binary_wrapper.cdll.tms_set_interesting_region(True)
+        # We can either reuse the pool or delete it immediately, and we implement the latter currently since Slime uses it.
+        # About why we need a pool: https://github.com/fzyzcjy/torch_memory_saver/pull/20#issuecomment-3047099047
+        pool = torch.cuda.MemPool()
+        with torch.cuda.use_mem_pool(pool):
+            self._binary_wrapper.cdll.tms_set_interesting_region(False)
+            try:
+                yield
+            finally:
+                self._binary_wrapper.cdll.tms_set_interesting_region(True)
+        del pool
 
     def pause(self, tag: Optional[str]):
         tag_bytes = tag.encode("utf-8") if tag else None

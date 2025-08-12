@@ -7,8 +7,10 @@
 #include "utils.h"
 
 enum class AllocationState {
-    ACTIVE,  // Memory is mapped and accessible
-    PAUSED    // Memory is unmapped and inaccessible
+    // Memory is mapped and accessible
+    ACTIVE,
+    // Memory is unmapped and inaccessible
+    PAUSED
 };
 
 struct AllocationMetadata {
@@ -16,7 +18,7 @@ struct AllocationMetadata {
     CUdevice device;
     CUmemGenericAllocationHandle allocHandle;
     std::string tag;
-    AllocationState state;  // Track whether this allocation is paused or resumed
+    AllocationState state;
     bool enable_cpu_backup;
     void* cpu_backup;
 };
@@ -28,8 +30,8 @@ public:
     cudaError_t malloc(void** ptr, CUdevice device, size_t size, const std::string& tag, bool enable_cpu_backup);
     cudaError_t free(void* ptr);
 
-    int pause(const std::string& tag);
-    int resume(const std::string& tag);
+    void pause(const std::string& tag);
+    void resume(const std::string& tag);
 
 private:
     TorchMemorySaver();

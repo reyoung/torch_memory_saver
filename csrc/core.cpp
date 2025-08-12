@@ -53,7 +53,7 @@ cudaError_t TorchMemorySaver::free(void *ptr) {
     return cudaSuccess;
 }
 
-int TorchMemorySaver::pause(const std::string& tag) {
+void TorchMemorySaver::pause(const std::string& tag) {
     const std::lock_guard <std::mutex> lock(allocator_metadata_mutex_);
 
     for (auto it = allocation_metadata_.begin(); it != allocation_metadata_.end(); ++it) {
@@ -98,7 +98,7 @@ int TorchMemorySaver::pause(const std::string& tag) {
     return 0;
 }
 
-int TorchMemorySaver::resume(const std::string& tag) {
+void TorchMemorySaver::resume(const std::string& tag) {
     const std::lock_guard <std::mutex> lock(allocator_metadata_mutex_);
 
     for (auto it = allocation_metadata_.begin(); it != allocation_metadata_.end(); ++it) {

@@ -14,8 +14,6 @@ def run(hook_mode: str):
     assert os.environ["TMS_INIT_ENABLE_CPU_BACKUP"] == "1"
     assert hook_mode == "preload"
 
-    TODO_global_enable_cpu_backup
-
     torch_memory_saver.hook_mode = hook_mode
     logging.basicConfig(level=logging.DEBUG, stream=sys.stdout)
 

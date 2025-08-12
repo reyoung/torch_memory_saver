@@ -36,11 +36,7 @@ cudaError_t TorchMemorySaver::free(void *ptr) {
     {
         const std::lock_guard <std::mutex> lock(allocator_metadata_mutex_);
         if (allocation_metadata_.count(ptr) == 0) {
-            std::cout << "[torch_memory_saver.cpp] Trying to free a pointer not allocated here. "
-                      << " ptr=" << ptr << " file=" << __FILE__ << " func=" << __func__ << " line=" << __LINE__
-                      << std::endl;
-            APIForwarder::call_real_cuda_free(ptr);
-            return cudaSuccess;
+            return APIForwarder::call_real_cuda_free(ptr);
         }
         metadata = allocation_metadata_[ptr];
         allocation_metadata_.erase(ptr);

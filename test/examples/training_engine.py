@@ -35,11 +35,20 @@ def run(hook_mode: str):
     assert mem_after_pause < mem_initial - 1_000_000
 
     with torch_memory_saver.disable():
+        mem_after_disable = get_and_print_gpu_memory("After disable")
+        assert mem_after_disable == mem_after_pause
+
         # Can still execute code in disabled region
         tensor_in_disabled_region = torch.full((1024 ** 3,), 53, dtype=torch.uint8, device='cuda')
         out = tensor_in_disabled_region.float().mean().item()
         assert out == 53, f"{out=}"
 
+        mem_after_exec_in_disable = get_and_print_gpu_memory("After exec in disable")
+        assert mem_after_exec_in_disable > mem_after_disable + 4 * 1024 ** 3
+
+    # should do cleanup
+    mem_after_exit_disable = get_and_print_gpu_memory("After existing disable")
+    assert mem_after_exit_disable <= mem_after_pause + 1024 ** 2
 
     TODO
 

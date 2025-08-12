@@ -34,13 +34,22 @@ def run(hook_mode: str):
     mem_after_pause = get_and_print_gpu_memory("After pause")
     assert mem_after_pause < mem_initial - 1_000_000
 
+    with torch_memory_saver.disable():
+        # Can still execute code in disabled region
+        tensor_in_disabled_region = torch.full((1024 ** 3,), 53, dtype=torch.uint8, device='cuda')
+        out = tensor_in_disabled_region.float().mean().item()
+        assert out == 53, f"{out=}"
+
+
     TODO
 
+    del initial_tensor
 
-def _execute_forward_pass_and_assert(model_weights: List[torch.Tensor]):
+
+def _execute_forward_pass_and_assert(weights: List[torch.Tensor]):
     # simulate large activations during forward pass
     ones = torch.ones((1024 ** 3,), dtype=torch.float32, device="cuda")
-    sum_avg_weights = reduce(lambda a, b: a + b, [w.float().mean() for w in model_weights])
+    sum_avg_weights = reduce(lambda a, b: a + b, [w.float().mean() for w in weights])
     outs = ones * sum_avg_weights
     out = outs.mean().item()
     assert out == 42, f"{out=}"

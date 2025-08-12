@@ -109,13 +109,13 @@ void tms_set_enable_cpu_backup(bool enable_cpu_backup) {
     thread_local_config.set_enable_cpu_backup(enable_cpu_backup);
 }
 
-void tms_pause(const char* tag) {
+int tms_pause(const char* tag) {
     std::string tag_str = (tag != nullptr) ? std::string(tag) : "";
-    TorchMemorySaver::instance().pause(tag_str);
+    return TorchMemorySaver::instance().pause(tag_str);
 }
 
-void tms_resume(const char* tag) {
+int tms_resume(const char* tag) {
     std::string tag_str = (tag != nullptr) ? std::string(tag) : "";
-    TorchMemorySaver::instance().resume(tag_str);
+    return TorchMemorySaver::instance().resume(tag_str);
 }
 }

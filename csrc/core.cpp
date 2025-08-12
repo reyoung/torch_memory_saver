@@ -38,6 +38,7 @@ cudaError_t TorchMemorySaver::free(void *ptr) {
         if (allocation_metadata_.count(ptr) == 0) {
             return APIForwarder::call_real_cuda_free(ptr);
         }
+
         metadata = allocation_metadata_[ptr];
         allocation_metadata_.erase(ptr);
     }

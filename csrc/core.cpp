@@ -47,6 +47,11 @@ cudaError_t TorchMemorySaver::free(void *ptr) {
     CURESULT_CHECK(cuMemRelease(metadata.allocHandle));
     CURESULT_CHECK(cuMemAddressFree((CUdeviceptr) ptr, metadata.size));
 
+    if (nullptr != metadata.cpu_backup) {
+        CUDA_ERROR_CHECK(cudaFreeHost(metadata.cpu_backup));
+        metadata.cpu_backup = nullptr;
+    }
+
 #ifdef TMS_DEBUG_LOG
     std::cout << "[torch_memory_saver.cpp] TorchMemorySaver.cuda_free "
               << " ptr=" << ptr << " metadata.size=" << metadata.size

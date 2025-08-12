@@ -50,7 +50,13 @@ def run(hook_mode: str):
     mem_after_exit_disable = get_and_print_gpu_memory("After existing disable")
     assert mem_after_exit_disable <= mem_after_pause + 1024 ** 2
 
-    TODO
+    torch_memory_saver.resume()
+    mem_after_resume = get_and_print_gpu_memory("After resume")
+    assert mem_after_forward_pass - 1024 ** 2 < mem_after_resume < mem_after_forward_pass + 1024 ** 2
+
+    _execute_forward_pass_and_assert(model_weights)
+    mem_after_second_forward_pass = get_and_print_gpu_memory("After second forward pass")
+    assert mem_after_forward_pass + 1024 ** 2 < mem_after_second_forward_pass < mem_after_forward_pass + 1024 ** 2
 
     del initial_tensor
 

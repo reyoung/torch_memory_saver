@@ -11,6 +11,7 @@ from torch_memory_saver.testing_utils import get_and_print_gpu_memory
 
 def run(hook_mode: str):
     assert os.environ["TMS_INIT_ENABLE"] == "1"
+    assert os.environ["TMS_INIT_ENABLE_CPU_BACKUP"] == "1"
     assert hook_mode == "preload"
 
     TODO_global_enable_cpu_backup

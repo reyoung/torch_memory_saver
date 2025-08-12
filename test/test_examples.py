@@ -37,7 +37,10 @@ def test_rl_example(hook_mode):
 
 
 def test_training_engine():
-    with change_env("TMS_INIT_ENABLE", "1"):
+    with (
+        change_env("TMS_INIT_ENABLE", "1"),
+        change_env("TMS_INIT_ENABLE_CPU_BACKUP", "1")
+    ):
         _test_core(training_engine.run, hook_mode="preload")
 
 

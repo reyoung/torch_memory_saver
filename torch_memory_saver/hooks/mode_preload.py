@@ -2,7 +2,7 @@ import logging
 import os
 from contextlib import contextmanager
 from torch_memory_saver.hooks.base import HookUtilBase
-from torch_memory_saver.utils import get_binary_path_from_package
+from torch_memory_saver.utils import get_binary_path_from_package, change_env
 
 logger = logging.getLogger(__name__)
 
@@ -22,18 +22,5 @@ class HookUtilModePreload(HookUtilBase):
 @contextmanager
 def configure_subprocess():
     """Configure environment variables for subprocesses. Only needed for hook_mode=preload."""
-    with _change_env("LD_PRELOAD", str(get_binary_path_from_package("torch_memory_saver_hook_mode_preload"))):
+    with change_env("LD_PRELOAD", str(get_binary_path_from_package("torch_memory_saver_hook_mode_preload"))):
         yield
-
-
-@contextmanager
-def _change_env(key: str, value: str):
-    old_value = os.environ.get(key, "")
-    os.environ[key] = value
-    logger.debug(f"change_env set key={key} value={value}")
-    try:
-        yield
-    finally:
-        assert os.environ[key] == value
-        os.environ[key] = old_value
-        logger.debug(f"change_env restore key={key} value={old_value}")

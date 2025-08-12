@@ -50,6 +50,7 @@ def _setup_function_signatures(cdll):
     cdll.tms_set_interesting_region.argtypes = [ctypes.c_bool]
     cdll.tms_get_interesting_region.restype = ctypes.c_bool
     cdll.tms_set_enable_cpu_backup.argtypes = [ctypes.c_bool]
+    cdll.tms_get_enable_cpu_backup.restype = ctypes.c_bool
     cdll.tms_pause.argtypes = [ctypes.c_char_p]
     cdll.tms_pause.restype = ctypes.c_int
     cdll.tms_resume.argtypes = [ctypes.c_char_p]

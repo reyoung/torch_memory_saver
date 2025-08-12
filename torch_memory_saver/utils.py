@@ -1,6 +1,9 @@
+import logging
 import os
 from contextlib import contextmanager
 from pathlib import Path
+
+logger = logging.getLogger(__name__)
 
 
 def get_binary_path_from_package(stem: str):

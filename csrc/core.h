@@ -7,10 +7,18 @@
 #include "utils.h"
 #include "macro.h"
 
+enum class AllocationState {
+    // Memory is mapped and accessible
+    ACTIVE,
+    // Memory is unmapped and inaccessible
+    PAUSED
+};
+
 struct AllocationMetadata {
     size_t size;
     CUdevice device;
     std::string tag;
+    AllocationState state;
     bool enable_cpu_backup;
     void* cpu_backup;
 

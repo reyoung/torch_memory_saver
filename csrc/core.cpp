@@ -1,7 +1,7 @@
 #include "core.h"
 #include "utils.h"
 #include "macro.h"
-
+#include "api_forwarder.h"
 TorchMemorySaver::TorchMemorySaver() {}
 
 TorchMemorySaver &TorchMemorySaver::instance() {
@@ -101,7 +101,7 @@ cudaError_t TorchMemorySaver::malloc(void **ptr, CUdevice device, size_t size, c
         CUDAUtils::cu_mem_set_access(*ptr, size, device);
         {
             const std::lock_guard<std::mutex> lock(allocator_metadata_mutex_);
-            allocation_metadata_.emplace(*ptr, AllocationMetadata{size, device, allocHandle, tag, enable_cpu_backup, nullptr});
+            allocation_metadata_.emplace(*ptr, AllocationMetadata{size, device, allocHandle, tag, AllocationState::ACTIVE, enable_cpu_backup, nullptr});
         }
         #ifdef TMS_DEBUG_LOG
             std::cout << "[torch_memory_saver.cpp] TorchMemorySaver.cuda_malloc "
@@ -147,7 +147,10 @@ cudaError_t TorchMemorySaver::free(void *ptr) {
         AllocationMetadata metadata;
         {
             const std::lock_guard <std::mutex> lock(allocator_metadata_mutex_);
-            SIMPLE_CHECK(allocation_metadata_.count(ptr), "Trying to free a pointer not allocated here");
+            if (allocation_metadata_.count(ptr) == 0) {
+            return APIForwarder::call_real_cuda_free(ptr);
+        }
+
             metadata = allocation_metadata_[ptr];
             allocation_metadata_.erase(ptr);
         }
@@ -213,6 +216,14 @@ void TorchMemorySaver::pause(const std::string& tag) {
                 continue;
             }
 
+        if (metadata.state != AllocationState::ACTIVE) {
+            std::cerr << "[torch_memory_saver.cpp] Cannot pause allocation that is not active."
+                      << " tag=" << metadata.tag << " ptr=" << std::to_string((uintptr_t)ptr)
+                      << " file=" << __FILE__ << " func=" << __func__ << " line=" << __LINE__
+                      << std::endl;
+            exit(1);
+        }
+
             if (metadata.enable_cpu_backup) {
                 if (nullptr == metadata.cpu_backup) {
                     CUDA_ERROR_CHECK(cudaMallocHost(&metadata.cpu_backup, metadata.size));
@@ -224,6 +235,8 @@ void TorchMemorySaver::pause(const std::string& tag) {
 
             CURESULT_CHECK(cuMemUnmap((CUdeviceptr) ptr, metadata.size));
             CURESULT_CHECK(cuMemRelease(metadata.allocHandle));
+
+        metadata.state = AllocationState::PAUSED;
 
             #ifdef TMS_DEBUG_LOG
                 std::cout << "[torch_memory_saver.cpp] TorchMemorySaver.pause"
@@ -273,6 +286,14 @@ void TorchMemorySaver::resume(const std::string& tag) {
                 continue;
             }
 
+        if (metadata.state != AllocationState::PAUSED) {
+            std::cerr << "[torch_memory_saver.cpp] Cannot resume allocation that is not paused. "
+                      << " tag=" << metadata.tag << " ptr=" << std::to_string((uintptr_t)ptr)
+                      << " file=" << __FILE__ << " func=" << __func__ << " line=" << __LINE__
+                      << std::endl;
+            exit(1);
+        }
+
             CUmemGenericAllocationHandle newAllocHandle;
             CUDAUtils::cu_mem_create(&newAllocHandle, metadata.size, metadata.device);
 
@@ -296,6 +317,7 @@ void TorchMemorySaver::resume(const std::string& tag) {
                         << std::endl;
             #endif
 
+        metadata.state = AllocationState::ACTIVE;
             metadata.allocHandle = newAllocHandle;
         }
     #else

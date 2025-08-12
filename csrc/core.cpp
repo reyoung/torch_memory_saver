@@ -222,9 +222,9 @@ void TorchMemorySaver::pause(const std::string& tag) {
 
         if (metadata.state != AllocationState::ACTIVE) {
             std::cerr << "[torch_memory_saver.cpp] Cannot pause allocation that is not active."
-                        << " tag=" << metadata.tag << " ptr=" << std::to_string((uintptr_t)ptr)
-                        << " file=" << __FILE__ << " func=" << __func__ << " line=" << __LINE__
-                        << std::endl;
+                      << " tag=" << metadata.tag << " ptr=" << std::to_string((uintptr_t)ptr)
+                      << " file=" << __FILE__ << " func=" << __func__ << " line=" << __LINE__
+                      << std::endl;
             exit(1);
         }
 

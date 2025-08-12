@@ -9,6 +9,7 @@ from setuptools.command.build_ext import build_ext
 logger = logging.getLogger(__name__)
 
 
+# copy & modify from torch/utils/cpp_extension.py
 def _find_platform_home(platform):
     """Find the install path for the specified platform (cuda/rocm)."""
     if platform == "cuda":

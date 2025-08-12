@@ -1,6 +1,7 @@
 #include "utils.h"
 #include "core.h"
 #include "api_forwarder.h"
+#include <optional>
 
 // ----------------------------------------------- threadlocal configs --------------------------------------------------
 

@@ -94,8 +94,6 @@ void TorchMemorySaver::pause(const std::string& tag) {
                   << std::endl;
 #endif
     }
-
-    return 0;
 }
 
 void TorchMemorySaver::resume(const std::string& tag) {
@@ -142,6 +140,4 @@ void TorchMemorySaver::resume(const std::string& tag) {
         metadata.state = AllocationState::ACTIVE;
         metadata.allocHandle = newAllocHandle;
     }
-
-    return 0;
 }

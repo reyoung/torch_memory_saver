@@ -33,9 +33,6 @@ struct AllocationMetadata {
 #endif
 };
 
-
-
-
 #if defined(USE_ROCM)
 namespace DeviceUtils {
     // Simple function to get global device ID from local device ID

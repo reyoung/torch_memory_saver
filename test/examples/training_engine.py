@@ -13,6 +13,8 @@ def run(hook_mode: str):
     assert os.environ["TMS_INIT_ENABLE"] == "1"
     assert hook_mode == "preload"
 
+    TODO_global_enable_cpu_backup
+
     torch_memory_saver.hook_mode = hook_mode
     logging.basicConfig(level=logging.DEBUG, stream=sys.stdout)
 
@@ -26,6 +28,11 @@ def run(hook_mode: str):
 
     _execute_forward_pass_and_assert(model_weights)
     mem_after_forward_pass = get_and_print_gpu_memory("After forward pass")
+    assert mem_after_forward_pass > mem_initial + 5 * 1024 ** 3
+
+    torch_memory_saver.pause()
+    mem_after_pause = get_and_print_gpu_memory("After pause")
+    assert mem_after_pause < mem_initial - 1_000_000
 
     TODO
 

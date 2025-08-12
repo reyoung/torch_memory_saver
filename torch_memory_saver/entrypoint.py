@@ -112,16 +112,16 @@ class _TorchMemorySaverImpl:
         assert dispose_mem_pool_after_use, "Only dispose_mem_pool_after_use=true is supported now"
         assert self._binary_wrapper.cdll.tms_get_interesting_region(), "disable() should be called only when tms is active"
 
-        # We can either reuse the pool or delete it immediately, and we implement the latter currently since Slime uses it.
-        # About why we need a pool: https://github.com/fzyzcjy/torch_memory_saver/pull/20#issuecomment-3047099047
-        pool = torch.cuda.MemPool()
-        with torch.cuda.use_mem_pool(pool):
-            self._binary_wrapper.cdll.tms_set_interesting_region(False)
-            try:
+        self._binary_wrapper.cdll.tms_set_interesting_region(False)
+        try:
+            # We can either reuse the pool or delete it immediately, and we implement the latter currently since Slime uses it.
+            # About why we need a pool: https://github.com/fzyzcjy/torch_memory_saver/pull/20#issuecomment-3047099047
+            pool = torch.cuda.MemPool()
+            with torch.cuda.use_mem_pool(pool):
                 yield
-            finally:
-                self._binary_wrapper.cdll.tms_set_interesting_region(True)
-        del pool
+            del pool
+        finally:
+            self._binary_wrapper.cdll.tms_set_interesting_region(True)
 
     def pause(self, tag: Optional[str]):
         tag_bytes = tag.encode("utf-8") if tag else None

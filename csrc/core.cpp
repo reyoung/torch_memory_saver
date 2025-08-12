@@ -137,6 +137,7 @@ void TorchMemorySaver::resume(const std::string& tag) {
                   << " metadata.enable_cpu_backup=" << metadata.enable_cpu_backup
                   << std::endl;
 #endif
+
         metadata.state = AllocationState::ACTIVE;
         metadata.allocHandle = newAllocHandle;
     }

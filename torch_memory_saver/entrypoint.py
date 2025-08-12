@@ -107,12 +107,16 @@ class _TorchMemorySaverImpl:
 
     @contextmanager
     def disable(self):
-        old_is_interesting_region = self._binary_wrapper.cdll.tms_get_interesting_region()
+        if not self._binary_wrapper.cdll.tms_get_interesting_region():
+            print("WARN: Execute TorchMemorySaver.disable while it is already disabled, thus it is no-op")
+            yield
+            return
+
         self._binary_wrapper.cdll.tms_set_interesting_region(False)
         try:
             yield
         finally:
-            self._binary_wrapper.cdll.tms_set_interesting_region(old_is_interesting_region)
+            self._binary_wrapper.cdll.tms_set_interesting_region(True)
 
     def pause(self, tag: Optional[str]):
         tag_bytes = tag.encode("utf-8") if tag else None

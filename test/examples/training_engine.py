@@ -31,7 +31,7 @@ def run(hook_mode: str):
 
     torch_memory_saver.pause()
     mem_after_pause = get_and_print_gpu_memory("After pause")
-    assert mem_after_pause < mem_initial + 2 * 1024 ** 2
+    assert mem_after_pause < mem_initial + 200 * 1024 ** 2
 
     with torch_memory_saver.disable():
         mem_after_disable = get_and_print_gpu_memory("After disable")

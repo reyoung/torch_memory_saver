@@ -65,8 +65,8 @@ void TorchMemorySaver::pause(const std::string& tag) {
         }
 
         if (metadata.state == AllocationState::PAUSED) {
-            std::cerr << "[torch_memory_saver.cpp] Cannot pause allocation that is already paused. "
-                      << "Tag: " << metadata.tag << ", Ptr: " << std::to_string((uintptr_t)ptr)
+            std::cerr << "[torch_memory_saver.cpp] Cannot pause allocation that is already paused."
+                      << " tag=" << metadata.tag << " ptr=" << std::to_string((uintptr_t)ptr)
                       << " file=" << __FILE__ << " func=" << __func__ << " line=" << __LINE__
                       << std::endl;
             exit(1);
@@ -111,7 +111,7 @@ void TorchMemorySaver::resume(const std::string& tag) {
 
         if (metadata.state == AllocationState::ACTIVE) {
             std::cerr << "[torch_memory_saver.cpp] Cannot resume allocation that is already active. "
-                      << "Tag: " << metadata.tag << ", Ptr: " << std::to_string((uintptr_t)ptr)
+                      << " tag=" << metadata.tag << " ptr=" << std::to_string((uintptr_t)ptr)
                       << " file=" << __FILE__ << " func=" << __func__ << " line=" << __LINE__
                       << std::endl;
             exit(1);

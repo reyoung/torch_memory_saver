@@ -173,7 +173,7 @@ cudaError_t TorchMemorySaver::free(void *ptr) {
 #else
     #error "USE_PLATFORM is not set"
 #endif
-return cudaSuccess;
+    return cudaSuccess;
 }
 
 void TorchMemorySaver::pause(const std::string& tag) {

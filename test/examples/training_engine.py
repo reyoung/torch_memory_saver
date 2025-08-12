@@ -45,10 +45,11 @@ def run(hook_mode: str):
         mem_after_exec_in_disable = get_and_print_gpu_memory("After exec in disable")
         assert mem_after_exec_in_disable > mem_after_disable + 4 * 1024 ** 3
 
+        del tensor_in_disabled_region
+
     # should do cleanup
     mem_after_exit_disable = get_and_print_gpu_memory("After exiting disable")
-    # TODO examine why there is remaining memory
-    assert mem_after_exit_disable <= mem_after_pause + 1.5 * 1024 ** 3
+    assert mem_after_exit_disable <= mem_after_pause + 10 * 1024 ** 2
 
     torch_memory_saver.resume()
     mem_after_resume = get_and_print_gpu_memory("After resume")

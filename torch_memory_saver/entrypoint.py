@@ -42,15 +42,18 @@ class TorchMemorySaver:
 
     @contextmanager
     def disable(self):
+        self._ensure_initialized()
         with self._impl.disable():
             yield
 
     def pause(self, tag: Optional[str] = None):
         """Pause memory for specific tag or all memory if tag is None"""
+        self._ensure_initialized()
         self._impl.pause(tag=tag)
 
     def resume(self, tag: Optional[str] = None):
         """Resume memory for specific tag or all memory if tag is None"""
+        self._ensure_initialized()
         self._impl.resume(tag=tag)
 
     # for compatibility

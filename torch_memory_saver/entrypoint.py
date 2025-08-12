@@ -127,10 +127,12 @@ class _TorchMemorySaverImpl:
             self._binary_wrapper.cdll.tms_set_interesting_region(True)
 
     def pause(self, tag: Optional[str]):
-        self._binary_wrapper.pause(tag)
+        tag_bytes = tag.encode("utf-8") if tag else None
+        self._binary_wrapper.cdll.tms_pause(tag_bytes)
 
     def resume(self, tag: Optional[str]):
-        self._binary_wrapper.resume(tag)
+        tag_bytes = tag.encode("utf-8") if tag else None
+        self._binary_wrapper.cdll.tms_resume(tag_bytes)
 
 
 def _sanity_checks():

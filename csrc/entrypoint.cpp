@@ -2,6 +2,7 @@
 #include "core.h"
 #include "api_forwarder.h"
 #include <optional>
+#include "macro.h"
 
 // ----------------------------------------------- threadlocal configs --------------------------------------------------
 

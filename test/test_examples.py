@@ -5,7 +5,7 @@ import multiprocessing
 import traceback
 import torch_memory_saver
 
-from examples import simple, cuda_graph, cpu_backup, rl_example, multi_device
+from examples import simple, cuda_graph, cpu_backup, rl_example, multi_device, training_engine
 
 _HOOK_MODES = ["preload", "torch"]
 
@@ -33,6 +33,10 @@ def test_multi_device(hook_mode):
 @pytest.mark.parametrize("hook_mode", _HOOK_MODES)
 def test_rl_example(hook_mode):
     _test_core(rl_example.run, hook_mode=hook_mode)
+
+
+def test_training_engine():
+    _test_core(training_engine.run, hook_mode="preload")
 
 
 def _test_core(fn, hook_mode):

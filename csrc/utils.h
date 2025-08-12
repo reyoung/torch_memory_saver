@@ -82,7 +82,7 @@ namespace CUDAUtils {
     }
 }
 
-bool get_bool_env_var(const char* name) {
+inline bool get_bool_env_var(const char* name) {
     const char* env_cstr = std::getenv(name);
     if (env_cstr == nullptr) {
         return false;

@@ -244,10 +244,10 @@ void TorchMemorySaver::pause(const std::string& tag) {
 
 #ifdef TMS_DEBUG_LOG
         std::cout << "[torch_memory_saver.cpp] TorchMemorySaver.pause"
-                << " ptr=" << ptr << " metadata.size=" << metadata.size << " metadata.allocHandle="
-                << metadata.allocHandle << " tag=" << metadata.tag << " filter_tag=" << tag
-                << " metadata.enable_cpu_backup=" << metadata.enable_cpu_backup
-                << std::endl;
+                  << " ptr=" << ptr << " metadata.size=" << metadata.size << " metadata.allocHandle="
+                  << metadata.allocHandle << " tag=" << metadata.tag << " filter_tag=" << tag
+                  << " metadata.enable_cpu_backup=" << metadata.enable_cpu_backup
+                  << std::endl;
 #endif
     }
 #else

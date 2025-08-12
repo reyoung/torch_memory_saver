@@ -4,6 +4,7 @@ from contextlib import nullcontext
 import multiprocessing
 import traceback
 import torch_memory_saver
+from torch_memory_saver.utils import change_env
 
 from examples import simple, cuda_graph, cpu_backup, rl_example, multi_device, training_engine
 
@@ -36,7 +37,8 @@ def test_rl_example(hook_mode):
 
 
 def test_training_engine():
-    _test_core(training_engine.run, hook_mode="preload")
+    with change_env("TMS_INIT_ENABLE", "1"):
+        _test_core(training_engine.run, hook_mode="preload")
 
 
 def _test_core(fn, hook_mode):

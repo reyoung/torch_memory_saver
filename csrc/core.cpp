@@ -69,7 +69,7 @@ void TorchMemorySaver::pause(const std::string& tag) {
                       << "Tag: " << metadata.tag << ", Ptr: " << std::to_string((uintptr_t)ptr)
                       << " file=" << __FILE__ << " func=" << __func__ << " line=" << __LINE__
                       << std::endl;
-            return 1;
+            exit(1);
         }
 
         if (metadata.enable_cpu_backup) {
@@ -114,7 +114,7 @@ void TorchMemorySaver::resume(const std::string& tag) {
                       << "Tag: " << metadata.tag << ", Ptr: " << std::to_string((uintptr_t)ptr)
                       << " file=" << __FILE__ << " func=" << __func__ << " line=" << __LINE__
                       << std::endl;
-            return 1;
+            exit(1);
         }
 
         CUmemGenericAllocationHandle newAllocHandle;

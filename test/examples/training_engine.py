@@ -25,11 +25,13 @@ def run(hook_mode: str):
     ]
 
     _execute_forward_pass_and_assert(model_weights)
+    mem_after_forward_pass = get_and_print_gpu_memory("After forward pass")
 
     TODO
 
 
 def _execute_forward_pass_and_assert(model_weights: List[torch.Tensor]):
+    # simulate large activations during forward pass
     ones = torch.ones((1024 ** 3,), dtype=torch.float32, device="cuda")
     sum_avg_weights = reduce(lambda a, b: a + b, [w.float().mean() for w in model_weights])
     outs = ones * sum_avg_weights

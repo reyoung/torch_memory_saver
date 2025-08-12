@@ -1,5 +1,6 @@
 #include "core.h"
 #include "utils.h"
+#include "api_forwarder.h"
 
 TorchMemorySaver::TorchMemorySaver() {}
 
@@ -34,7 +35,13 @@ cudaError_t TorchMemorySaver::free(void *ptr) {
     AllocationMetadata metadata;
     {
         const std::lock_guard <std::mutex> lock(allocator_metadata_mutex_);
-        SIMPLE_CHECK(allocation_metadata_.count(ptr), "Trying to free a pointer not allocated here");
+        if (allocation_metadata_.count(ptr) == 0) {
+            std::cout << "[torch_memory_saver.cpp] Trying to free a pointer not allocated here. "
+                      << " ptr=" << ptr << " file=" << __FILE__ << " func=" << __func__ << " line=" << __LINE__
+                      << std::endl;
+            APIForwarder::call_real_cuda_free(ptr);
+            return cudaSuccess;
+        }
         metadata = allocation_metadata_[ptr];
         allocation_metadata_.erase(ptr);
     }

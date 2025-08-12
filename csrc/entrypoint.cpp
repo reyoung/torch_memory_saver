@@ -1,13 +1,28 @@
 #include "utils.h"
 #include "core.h"
 #include "api_forwarder.h"
+#include <optional>
 
 // ----------------------------------------------- threadlocal configs --------------------------------------------------
 
-struct ThreadLocalConfig {
-    bool is_interesting_region_ = false;
+class ThreadLocalConfig {
+public:
     std::string current_tag_ = "default";
     bool enable_cpu_backup_ = false;
+
+    bool is_interesting_region() {
+        if (!is_interesting_region_.has_value()) {
+            is_interesting_region_ = get_bool_env_var("TMS_INIT_ENABLE");
+        }
+        return is_interesting_region_.value();
+    }
+
+    void set_interesting_region(bool value) {
+        is_interesting_region_ = value;
+    }
+
+private:
+    std::optional<bool> is_interesting_region_;
 };
 static thread_local ThreadLocalConfig thread_local_config;
 
@@ -15,7 +30,7 @@ static thread_local ThreadLocalConfig thread_local_config;
 
 #ifdef TMS_HOOK_MODE_PRELOAD
 cudaError_t cudaMalloc(void **ptr, size_t size) {
-    if (thread_local_config.is_interesting_region_) {
+    if (thread_local_config.is_interesting_region()) {
         return TorchMemorySaver::instance().malloc(
             ptr, CUDAUtils::cu_ctx_get_device(), size, thread_local_config.current_tag_, thread_local_config.enable_cpu_backup_);
     } else {
@@ -24,7 +39,7 @@ cudaError_t cudaMalloc(void **ptr, size_t size) {
 }
 
 cudaError_t cudaFree(void *ptr) {
-    if (thread_local_config.is_interesting_region_) {
+    if (thread_local_config.is_interesting_region()) {
         return TorchMemorySaver::instance().free(ptr);
     } else {
         return APIForwarder::call_real_cuda_free(ptr);
@@ -40,7 +55,7 @@ void *tms_torch_malloc(ssize_t size, int device, cudaStream_t stream) {
               << " size=" << size << " device=" << device << " stream=" << stream
               << std::endl;
 #endif
-    SIMPLE_CHECK(thread_local_config.is_interesting_region_, "only support interesting region");
+    SIMPLE_CHECK(thread_local_config.is_interesting_region(), "only support interesting region");
     void *ptr;
     TorchMemorySaver::instance().malloc(
         &ptr, CUDAUtils::cu_device_get(device), size, thread_local_config.current_tag_, thread_local_config.enable_cpu_backup_);
@@ -53,7 +68,7 @@ void tms_torch_free(void *ptr, ssize_t ssize, int device, cudaStream_t stream) {
               << " ptr=" << ptr << " ssize=" << ssize << " device=" << device << " stream=" << stream
               << std::endl;
 #endif
-    SIMPLE_CHECK(thread_local_config.is_interesting_region_, "only support interesting region");
+    SIMPLE_CHECK(thread_local_config.is_interesting_region(), "only support interesting region");
     TorchMemorySaver::instance().free(ptr);
 }
 }
@@ -63,11 +78,11 @@ void tms_torch_free(void *ptr, ssize_t ssize, int device, cudaStream_t stream) {
 
 extern "C" {
 void tms_set_interesting_region(bool is_interesting_region) {
-    thread_local_config.is_interesting_region_ = is_interesting_region;
+    thread_local_config.set_interesting_region(is_interesting_region);
 }
 
 bool tms_get_interesting_region() {
-    return thread_local_config.is_interesting_region_;
+    return thread_local_config.is_interesting_region();
 }
 
 void tms_set_current_tag(const char* tag) {

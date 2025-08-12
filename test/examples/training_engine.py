@@ -63,7 +63,7 @@ def run(hook_mode: str):
 def _execute_forward_pass_and_assert(weights: List[torch.Tensor]):
     # simulate large activations during forward pass
     ones = torch.ones((1024 ** 3,), dtype=torch.float32, device="cuda")
-    sum_avg_weights = reduce(lambda a, b: a + b, [w.float().mean() for w in weights])
+    sum_avg_weights = reduce(lambda a, b: (a + b) / 2, [w.float().mean() for w in weights])
     outs = ones * sum_avg_weights
     out = outs.mean().item()
     assert out == 42, f"{out=}"

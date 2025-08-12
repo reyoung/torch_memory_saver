@@ -22,12 +22,12 @@ struct AllocationMetadata {
     bool enable_cpu_backup;
     void* cpu_backup;
 
-#if defined(USE_ROCM)
+#if defined(USE_CUDA)
+    CUmemGenericAllocationHandle allocHandle;
+#elif defined(USE_ROCM)
     size_t aligned_size;
     std::vector<hipMemGenericAllocationHandle_t> allocHandles;
     std::vector<size_t> chunk_sizes;
-#elif defined(USE_CUDA)
-    CUmemGenericAllocationHandle allocHandle;
 #else
     #error "USE_PLATFORM is not set"
 #endif

@@ -2,14 +2,13 @@
 #include "utils.h"
 #include "macro.h"
 #include "api_forwarder.h"
+
 TorchMemorySaver::TorchMemorySaver() {}
 
 TorchMemorySaver &TorchMemorySaver::instance() {
     static TorchMemorySaver instance;
     return instance;
 }
-
-
 
 cudaError_t TorchMemorySaver::malloc(void **ptr, CUdevice device, size_t size, const std::string& tag, const bool enable_cpu_backup) {
 #if defined(USE_ROCM)
@@ -100,23 +99,24 @@ cudaError_t TorchMemorySaver::malloc(void **ptr, CUdevice device, size_t size, c
     CURESULT_CHECK(cuMemAddressReserve((CUdeviceptr *) ptr, size, 0, 0, 0));
     CURESULT_CHECK(cuMemMap((CUdeviceptr) * ptr, size, 0, allocHandle, 0));
     CUDAUtils::cu_mem_set_access(*ptr, size, device);
+
     {
         const std::lock_guard<std::mutex> lock(allocator_metadata_mutex_);
         allocation_metadata_.emplace(*ptr, AllocationMetadata{size, device, allocHandle, tag, AllocationState::ACTIVE, enable_cpu_backup, nullptr});
     }
+
 #ifdef TMS_DEBUG_LOG
     std::cout << "[torch_memory_saver.cpp] TorchMemorySaver.cuda_malloc "
               << " ptr=" << ptr << " *ptr=" << *ptr << " size=" << size
               << " allocHandle=" << allocHandle << " tag=" << tag
               << std::endl;
 #endif
+
 #else
     #error "USE_PLATFORM is not set"
 #endif
     return cudaSuccess;
 }
-
-
 
 cudaError_t TorchMemorySaver::free(void *ptr) {
 #if defined(USE_ROCM)
@@ -147,8 +147,8 @@ cudaError_t TorchMemorySaver::free(void *ptr) {
     {
         const std::lock_guard <std::mutex> lock(allocator_metadata_mutex_);
         if (allocation_metadata_.count(ptr) == 0) {
-        return APIForwarder::call_real_cuda_free(ptr);
-    }
+            return APIForwarder::call_real_cuda_free(ptr);
+        }
 
         metadata = allocation_metadata_[ptr];
         allocation_metadata_.erase(ptr);
@@ -169,13 +169,12 @@ cudaError_t TorchMemorySaver::free(void *ptr) {
               << " metadata.allocHandle=" << metadata.allocHandle << " tag=" << metadata.tag
               << std::endl;
 #endif
+
 #else
     #error "USE_PLATFORM is not set"
 #endif
 return cudaSuccess;
 }
-
-
 
 void TorchMemorySaver::pause(const std::string& tag) {
     const std::lock_guard <std::mutex> lock(allocator_metadata_mutex_);
@@ -188,7 +187,6 @@ void TorchMemorySaver::pause(const std::string& tag) {
         if (!tag.empty() && metadata.tag != tag) {
             continue;
         }
-        
         // Copy CUDA's code supporting cpu_backup to here
         if (metadata.enable_cpu_backup) {
             if (nullptr == metadata.cpu_backup) {
@@ -222,13 +220,13 @@ void TorchMemorySaver::pause(const std::string& tag) {
             continue;
         }
 
-    if (metadata.state != AllocationState::ACTIVE) {
-        std::cerr << "[torch_memory_saver.cpp] Cannot pause allocation that is not active."
-                    << " tag=" << metadata.tag << " ptr=" << std::to_string((uintptr_t)ptr)
-                    << " file=" << __FILE__ << " func=" << __func__ << " line=" << __LINE__
-                    << std::endl;
-        exit(1);
-    }
+        if (metadata.state != AllocationState::ACTIVE) {
+            std::cerr << "[torch_memory_saver.cpp] Cannot pause allocation that is not active."
+                        << " tag=" << metadata.tag << " ptr=" << std::to_string((uintptr_t)ptr)
+                        << " file=" << __FILE__ << " func=" << __func__ << " line=" << __LINE__
+                        << std::endl;
+            exit(1);
+        }
 
         if (metadata.enable_cpu_backup) {
             if (nullptr == metadata.cpu_backup) {
@@ -244,20 +242,18 @@ void TorchMemorySaver::pause(const std::string& tag) {
 
         metadata.state = AllocationState::PAUSED;
 
-        #ifdef TMS_DEBUG_LOG
-            std::cout << "[torch_memory_saver.cpp] TorchMemorySaver.pause"
-                    << " ptr=" << ptr << " metadata.size=" << metadata.size << " metadata.allocHandle="
-                    << metadata.allocHandle << " tag=" << metadata.tag << " filter_tag=" << tag
-                    << " metadata.enable_cpu_backup=" << metadata.enable_cpu_backup
-                    << std::endl;
-        #endif
+#ifdef TMS_DEBUG_LOG
+        std::cout << "[torch_memory_saver.cpp] TorchMemorySaver.pause"
+                << " ptr=" << ptr << " metadata.size=" << metadata.size << " metadata.allocHandle="
+                << metadata.allocHandle << " tag=" << metadata.tag << " filter_tag=" << tag
+                << " metadata.enable_cpu_backup=" << metadata.enable_cpu_backup
+                << std::endl;
+#endif
     }
 #else
     #error "USE_PLATFORM is not set"
 #endif
 }
-
-
 
 void TorchMemorySaver::resume(const std::string& tag) {
     const std::lock_guard <std::mutex> lock(allocator_metadata_mutex_);

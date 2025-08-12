@@ -1,6 +1,5 @@
 #pragma once
 #include <dlfcn.h>
-// #include <cuda_runtime_api.h>
 #include "macro.h"
 
 namespace APIForwarder {

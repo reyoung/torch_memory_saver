@@ -108,11 +108,7 @@ class _TorchMemorySaverImpl:
     @contextmanager
     def disable(self, dispose_mem_pool_after_use: bool = True):
         assert dispose_mem_pool_after_use, "Only dispose_mem_pool_after_use=true is supported now"
-
-        if not self._binary_wrapper.cdll.tms_get_interesting_region():
-            print("WARN: Execute TorchMemorySaver.disable while it is already disabled, thus it is no-op")
-            yield
-            return
+        assert self._binary_wrapper.cdll.tms_get_interesting_region(), "disable() should be called only when tms is active"
 
         # We can either reuse the pool or delete it immediately, and we implement the latter currently since Slime uses it.
         # About why we need a pool: https://github.com/fzyzcjy/torch_memory_saver/pull/20#issuecomment-3047099047

@@ -102,7 +102,10 @@ cudaError_t TorchMemorySaver::malloc(void **ptr, CUdevice device, size_t size, c
 
     {
         const std::lock_guard<std::mutex> lock(allocator_metadata_mutex_);
-        allocation_metadata_.emplace(*ptr, AllocationMetadata{size, device, allocHandle, tag, AllocationState::ACTIVE, enable_cpu_backup, nullptr});
+        allocation_metadata_.emplace(
+            *ptr,
+            AllocationMetadata{size, device, tag, AllocationState::ACTIVE, enable_cpu_backup, nullptr, allocHandle}
+        );
     }
 
 #ifdef TMS_DEBUG_LOG

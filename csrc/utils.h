@@ -184,6 +184,13 @@ namespace CUDAUtils {
         prop.type = CU_MEM_ALLOCATION_TYPE_PINNED;
         prop.location.type = CU_MEM_LOCATION_TYPE_DEVICE;
         prop.location.id = device;
+
+        int flag = 0;
+        CURESULT_CHECK(cuDeviceGetAttribute(&flag, CU_DEVICE_ATTRIBUTE_GPU_DIRECT_RDMA_WITH_CUDA_VMM_SUPPORTED, device));
+        if (flag) {  // support GPUDirect RDMA if possible
+            prop.allocFlags.gpuDirectRDMACapable = 1;
+        }
+
         CURESULT_CHECK(cuMemCreate(alloc_handle, size, &prop, 0));
     }
 

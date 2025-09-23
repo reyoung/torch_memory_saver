@@ -104,7 +104,7 @@ def _create_ext_modules(platform):
         ]
         libraries = ['cuda']
         platform_macros = [('USE_CUDA', '1')]
-        extra_compile_args += ['-std=c++17', '-O3']
+        extra_compile_args = ['-std=c++17', '-O3']
     
     # Create extensions with different hook modes
     ext_modules = [

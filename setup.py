@@ -104,6 +104,7 @@ def _create_ext_modules(platform):
         ]
         libraries = ['cuda']
         platform_macros = [('USE_CUDA', '1')]
+        extra_compile_args += ['-std=c++17', '-O3']
     
     # Create extensions with different hook modes
     ext_modules = [
@@ -120,6 +121,7 @@ def _create_ext_modules(platform):
                 *extra_macros,
             ],
             py_limited_api=True,
+            extra_compile_args=extra_compile_args,
         )
         for name, extra_macros in [
             ('torch_memory_saver_hook_mode_preload', [('TMS_HOOK_MODE_PRELOAD', '1')]),

@@ -1,4 +1,9 @@
 #include "core.h"
+
+#include <cstring>
+#include <chrono>
+#include <future>
+#include <sys/mman.h>
 #include "utils.h"
 #include "macro.h"
 #include "api_forwarder.h"
@@ -161,7 +166,15 @@ cudaError_t TorchMemorySaver::free(void *ptr) {
     CURESULT_CHECK(cuMemAddressFree((CUdeviceptr) ptr, metadata.size));
 
     if (nullptr != metadata.cpu_backup) {
-        CUDA_ERROR_CHECK(cudaFreeHost(metadata.cpu_backup));
+        if (metadata.cpu_backup_mmap_size == 0) {
+            CUDA_ERROR_CHECK(cudaFreeHost(metadata.cpu_backup));
+        } else {
+            CUDA_ERROR_CHECK(cudaHostUnregister(metadata.cpu_backup));
+            if (int errcode = munmap(metadata.cpu_backup, metadata.cpu_backup_mmap_size); errcode != 0 ) {
+                std::cerr << "[torch_memory_saver.cpp] munmap failed: " << errcode << std::endl;
+                exit(1);
+            }
+        }
         metadata.cpu_backup = nullptr;
     }
 
@@ -232,7 +245,68 @@ void TorchMemorySaver::pause(const std::string& tag) {
 
         if (metadata.enable_cpu_backup) {
             if (nullptr == metadata.cpu_backup) {
-                CUDA_ERROR_CHECK(cudaMallocHost(&metadata.cpu_backup, metadata.size));
+                auto begin = std::chrono::high_resolution_clock::now();
+                if (strcmp(getenv("TMS_FASTER_MALLOC_HOST"), "1") == 0) {
+                    size_t page_size = 1<<21;  // 2MB
+                    size_t n_pages = (metadata.size + 1 / page_size);
+                    metadata.cpu_backup = mmap64(
+                    nullptr, n_pages * page_size, PROT_READ | PROT_WRITE, MAP_ANONYMOUS | MAP_PRIVATE | MAP_HUGETLB, 0,0);
+                    if (metadata.cpu_backup == MAP_FAILED) {
+                        // fall back to small page
+                        page_size = 1<<12;
+                        n_pages = (metadata.size + 1 / page_size);
+                        metadata.cpu_backup = mmap64(
+                            nullptr, n_pages*page_size, PROT_READ| PROT_WRITE, MAP_ANONYMOUS | MAP_PRIVATE , 0, 0);
+                        if (metadata.cpu_backup == MAP_FAILED) {
+                            std::cerr << "[torch_memory_saver.cpp] mmap failed, cannot allocate " << n_pages * page_size << " by mmap\n";
+                            exit(1);
+                        }
+                    }
+                    metadata.cpu_backup_mmap_size = n_pages * page_size;
+
+                    // try access one byte in each page, by multi threads.
+                    int n_threads = 4;
+                    if (auto n_thread_str = std::getenv("TMS_CUDA_REGISTER_N_THREADS"); n_thread_str != nullptr) {
+                        n_threads = atoi(n_thread_str);
+                    }
+                    if (n_threads < 1) {
+                        n_threads = 1;
+                    }
+
+                    auto load_part = [&](int part_id) {
+                        auto pages_per_thread = (n_pages + n_threads - 1) / n_threads;
+                        for (auto page_id = 0; page_id < pages_per_thread; ++page_id) {
+                            auto page_offset = page_id + part_id * pages_per_thread;
+                            if (page_offset > n_pages) {
+                                break;
+                            }
+
+                            memset((uint8_t *)(metadata.cpu_backup) + page_offset * page_size, 0, 1);
+                        }
+                    };
+
+                    std::vector<std::thread> threads;
+                    for (int part_id=0; part_id<n_threads - 1; part_id++) {
+                        threads.emplace_back([&, part_id] {
+                            load_part(part_id);
+                        });
+                    }
+
+                    load_part(n_threads - 1);
+                    for (auto& th: threads) {
+                        th.join();
+                    }
+
+                    CUDA_ERROR_CHECK(cudaHostRegister(metadata.cpu_backup, metadata.size, cudaHostRegisterDefault));
+
+                } else {
+                    metadata.cpu_backup_mmap_size = 0;
+                    CUDA_ERROR_CHECK(cudaMallocHost(&metadata.cpu_backup, metadata.size));
+                }
+                auto end = std::chrono::high_resolution_clock::now();
+                std::cerr << "[torch memory saver] allocate " << metadata.size << " in "
+                    << std::chrono::duration_cast<std::chrono::duration<float>>(end - begin).count()
+                    << " seconds" << std::endl;
             }
             SIMPLE_CHECK(metadata.cpu_backup != nullptr, "cpu_backup should not be nullptr");
             // TODO may use cudaMemcpyAsync if needed

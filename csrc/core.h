@@ -21,6 +21,7 @@ struct AllocationMetadata {
     AllocationState state;
     bool enable_cpu_backup;
     void* cpu_backup;
+    size_t cpu_backup_mmap_size{0};
 
 #if defined(USE_CUDA)
     CUmemGenericAllocationHandle allocHandle;
